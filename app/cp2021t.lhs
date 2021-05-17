@@ -1015,7 +1015,19 @@ sd = p2 . cataExpAr sd_gen
 ad :: Floating a => a -> ExpAr a -> a
 ad v = p2 . cataExpAr (ad_gen v)
 \end{code}
+\newpage
 Definir:
+
+\begin{code}
+outExpAr :: ExpAr a -> OutExpAr a
+\end{code}
+%outExpAr :: ExpAr a -> Either () (Either a (Either (BinOp, (ExpAr a, ExpAr a)) (UnOp, ExpAr a)))
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+  |ExpAr A| \ar@@/^2pc/[rr]^-{|outExpAr|} & {\cong} & |OutExpAr A| \ar@@/^2pc/[ll]^-{|inExpAr|}
+%  |ExpAr A| \ar@@/^2pc/[rr]^-{|outExpAr|} & {\cong} & {1 + (A + (BinOp \times (ExpAr A)^2 + UnOp \times ExpAr A))} \ar@@/^2pc/[ll]^-{|inExpAr|}
+}
+\end{eqnarray*}
 
 \begin{code}
 outExpAr = undefined
