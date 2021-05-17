@@ -6,3 +6,4 @@ README.md
 stack.yaml
 stack.yaml.lock
 Setup.hs
+latex.sh
