@@ -203,7 +203,7 @@ import Test.QuickCheck hiding ((><),choose,collect)
 import qualified Test.QuickCheck as QuickCheck
 import Graphics.Gloss
 import Graphics.Gloss.Interface.Pure.Game
-import Control.Monad
+import Control.Monad hiding (ap)
 import Control.Applicative hiding ((<|>))
 import System.Process
 \end{code}
