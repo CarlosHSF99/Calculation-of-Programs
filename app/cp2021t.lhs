@@ -127,15 +127,15 @@
 
 \begin{center}\large
 \begin{tabular}{ll}
-\textbf{Grupo} nr. & 999 (preencher)
+\textbf{Grupo} nr. & 119
 \\\hline
-a11111 & Nome1 (preencher)
+a89492 & Ivo Pereira Vilas Boas
 \\
-a22222 & Nome2 (preencher)
+a89509 & Carlos Humberto da Silva Ferreira
 \\
-a33333 & Nome3 (preencher)
+a89555 & Diogo Francisco Lima Barbosa
 \\
-a44444 & Nome4 (preencher, se aplicável, ou apagar)
+a90439 & Nuno Gonçalo Machado Rodrigues
 \end{tabular}
 \end{center}
 
