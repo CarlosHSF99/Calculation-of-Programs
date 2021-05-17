@@ -8,3 +8,9 @@ stack.yaml.lock
 Setup.hs
 latex.sh
 .stack-work
+cp2021t.aux
+cp2021t.idx
+cp2021t.log
+cp2021t.out
+cp2021t.ptb
+cp2021t.tex
