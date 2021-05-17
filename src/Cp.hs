@@ -191,8 +191,10 @@ nil = const []
 
 cons = uncurry (:)
 
+add :: Num c => (c, c) -> c
 add = uncurry (+)
 
+mul :: Num c => (c, c) -> c
 mul = uncurry (*)
 
 conc = uncurry (++)
