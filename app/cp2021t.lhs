@@ -985,6 +985,8 @@ infixr 4 .&&&.
 f .&&&. g = \a -> ((f a) && (g a))
 \end{code}
 
+\newpage
+
 %----------------- Soluções dos alunos -----------------------------------------%
 
 \section{Soluções dos alunos}\label{sec:resolucao}
@@ -1114,6 +1116,45 @@ outExpAr :: ExpAr a -> OutExpAr a
   \end{lcbr}
 \end{lcbr}
 \qed
+\end{eqnarray*}
+
+\begin{code}
+g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (UnOp, a))) -> a
+
+ev = eval_exp
+g = g_eval_exp
+\end{code}
+
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    |ExpAr A|
+    ¦   ¦   \ar[d]_-{|eval_exp a|}
+&
+    |1 + (A + (BinOp >< (ExpAr A >< ExpAr A) + UnOp >< ExpAr A))|
+    ¦   ¦   \ar[d]^{|id + (id + (id >< (eval_exp a >< eval_exp a) + id >< eval_exp a))|}
+    ¦   ¦   \ar[l]_-{|inExpAr|}
+\\
+    |A|
+&
+    |1 + (A + (BinOp >< (A >< A) + UnOp >< A))|
+    ¦   ¦   \ar[l]^-{|g_eval_exp|}
+}
+\end{eqnarray*}
+
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    |ExpAr A|
+    ¦   ¦   \ar[d]_-{|eval_exp a|}
+&
+    |OutExpAr A|
+    ¦   ¦   \ar[d]^{|fF (eval_exp a)|}
+    ¦   ¦   \ar[l]_-{|inT|}
+\\
+    |A|
+&
+    |fF A|
+    ¦   ¦   \ar[l]^-{|g_eval_exp|}
+}
 \end{eqnarray*}
 
 \begin{code}
