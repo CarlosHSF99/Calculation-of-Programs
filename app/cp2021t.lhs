@@ -1157,6 +1157,121 @@ g = g_eval_exp
 }
 \end{eqnarray*}
 
+%format g1 = "g_1"
+%format g2 = "g_2"
+%format g3 = "g_3"
+%format g4 = "g_4"
+\begin{eqnarray*}
+\start
+	|(ev v) . inT = g . fF (ev v)|
+%
+\just\equiv{ Def-inExpAr; \ Def-F }
+%
+	|(ev v) . either (const X) (either N (either bin (uncurry Un))) = g . (id + (id + (id >< (ev v >< ev v) + id >< ev v)))|
+%
+\just\equiv{ Inferência do tipo de g }
+%
+	|(ev v) . either (const X) (either N (either bin (uncurry Un))) = either g1 (either g2 (either g3 g4)) . (id + (id + (id >< (ev v >< ev v) + id >< ev v)))|
+%
+\just\equiv{ 3 |><| Fusão-+; \ 3 |><| Asborsção-+; \ 2 |><| Natural-id }
+%
+    |either ((ev v) . (const X)) (either ((ev v) . N) (either ((ev v) . bin) ((ev v) . (uncurry Un)))) = either g1 (either g2 (either (g3 . (id >< (ev v >< ev v))) (g4 . (id >< ev a))))|
+%
+\just\equiv{ 3 |><| Eq-+ }
+%
+\begin{lcbr}
+  |(ev v) . (const X) = g1|\\
+  |(ev v) . N = g2|\\
+  |(ev v) . bin = g3 . (id >< (ev v >< ev v))|\\
+  |(ev v) . (uncurry Un) = g4 . (id >< ev v)|
+\end{lcbr}
+%
+\just\equiv{ Igualdade extensional; \ Def-comp }
+%
+\begin{lcbr}
+  |ev v ((const X) ()) = g1 ()|\\
+  |ev v (N a) = g2 a|\\
+  |ev v (bin (binop, (a, b))) = g3 ((id >< (ev v >< ev v)) (binop, (a, b)))|\\
+  |ev v ((uncurry Un) (unop, a)) = g4 ((id >< ev v) (unop, a))|
+\end{lcbr}
+%
+\just\equiv{ Def-const; \ Def-N; \ Def-bin; \ Def-|uncurry Un|; \ Def-|><| }
+%
+\begin{lcbr}
+  |ev v X = g1 ()|\\
+  |ev v (N a) = g2 a|\\
+  |ev v (Bin binop a b) = g3 (binop, (ev v a, ev v b))|\\
+  |ev v (Un unop a) = g4 (unop, ev v a)|
+\end{lcbr}
+%
+\just\equiv{ Parametrizar binop e unop }
+%
+\begin{lcbr}
+  |ev v X = g1 ()|\\
+  |ev v (N a) = g2 a|\\
+  |ev v (Bin Sum a b) = g3 (Sum, (ev v a, ev v b))|\\
+  |ev v (Bin Product a b) = g3 (Product, (ev v a, ev v b))|\\
+  |ev v (Un Negate a) = g4 (Negate, ev v a)|\\
+  |ev v (Un E a) = g4 (E, ev v a)|
+\end{lcbr}
+%
+\just\equiv{ Def-ev }
+%
+\begin{lcbr}
+  |v = g1 ()|\\
+  |N a = g2 a|\\
+  |v1 + v2 = g3 (Sum, (v1, v2))|\\
+  |v1 * v2 = g3 (Product, (v1, v2))|\\
+  |negate v1 = g4 (Negate, v1)|\\
+  |expd v1 = g4 (E, v1)|
+\end{lcbr}
+%
+\just\equiv{ f = g $\equiv$ g = f }
+%
+\begin{lcbr}
+  |g1 () = v|\\
+  |g2 a = N a|\\
+  |g3 (Sum, (v1, v2)) = v1 + v2|\\
+  |g3 (Product, (v1, v2)) = v1 * v2|\\
+  |g4 (Negate, v1) = negate v1|\\
+  |g4 (E, v1) = expd v1|
+\end{lcbr}
+%
+\just\equiv{ uncurry +; add := uncurry + e outras }
+%
+\begin{lcbr}
+  |g1 () = v|\\
+  |g2 a = N a|\\
+  |g3 (Sum, (v1, v2)) = add (v1, v2)|\\
+  |g3 (Product, (v1, v2)) = mul (v1, v2)|\\
+  |g4 (Negate, v1) = negate v1|\\
+  |g4 (E, v1) = expd v1|
+\end{lcbr}
+%
+\just\equiv{ uncurry +; add := uncurry + e outras }
+%
+\begin{lcbr}
+  |g1 () = v|\\
+  |g2 a = N a|\\
+  |g3 (Sum, (v1, v2)) = add (p2 (Sum, (v1, v2)))|\\
+  |g3 (Product, (v1, v2)) = mul (p2 (Product, (v1, v2)))|\\
+  |g4 (Negate, v1) = negate (p2 (Negate, v1))|\\
+  |g4 (E, v1) = expd (p2 (E, v1))|
+\end{lcbr}
+%
+\just\equiv{ Def-comp; \ Igualdade extensional }
+%
+\begin{lcbr}
+  |g1 = const v|\\
+  |g2 = N|\\
+  |g3 = add · p2|\\
+  |g3 = mul · p2|\\
+  |g4 = negate . p2|\\
+  |g4 = expd . p2|
+\end{lcbr}
+\qed
+\end{eqnarray*}
+
 \begin{code}
 outExpAr = undefined
 ---
