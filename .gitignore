@@ -7,3 +7,4 @@ stack.yaml
 stack.yaml.lock
 Setup.hs
 latex.sh
+.stack-work
