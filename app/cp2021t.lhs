@@ -1029,6 +1029,93 @@ outExpAr :: ExpAr a -> OutExpAr a
 }
 \end{eqnarray*}
 
+\begin{eqnarray*}
+\start
+	|outExpAr . inExpAr = id|
+%
+\just\equiv{ Def-inExpAr }
+%
+	|outExpAr . [const X, [N, [bin, uncurry Un]]] = id|
+%
+\just\equiv{ Fusão-+ }
+%
+	|[outExpAr . const X, outExpAr . [N, [bin, uncurry Un]]] = id|
+%
+\just\equiv{ Universal-+; Natural-id }
+%
+\begin{lcbr}
+  |outExpAr . const X = i1|\\
+  |outExpAr . [N, [bin, uncurry Un]] = i2|
+\end{lcbr}
+%
+\just\equiv{ Fusão-+ }
+%
+\begin{lcbr}
+  |outExpAr . const X = i1|\\\relax
+  |[outExpAr . N, outExpAr . [bin, uncurry Un]] = i2|
+\end{lcbr}
+%
+\just\equiv{ Universal-+; Natural-id }
+%
+\begin{lcbr}
+  |outExpAr . const X = i1|\\
+  \begin{lcbr}
+    |outExpAr . N = i2 . i1|\\
+    |outExpAr . [bin, uncurry Un] = i2 . i2|
+  \end{lcbr}
+\end{lcbr}
+%
+\just\equiv{ Fusão-+ }
+%
+\begin{lcbr}
+  |outExpAr . const X = i1|\\
+  \begin{lcbr}
+    |outExpAr . N = i2 . i1|\\\relax
+    |[outExpAr . bin, outExpAr . uncurry Un] = i2 . i2|
+  \end{lcbr}
+\end{lcbr}
+%
+\just\equiv{ Universal-+; Natural-id }
+%
+\begin{lcbr}
+  |outExpAr . const X = i1|\\
+  \begin{lcbr}
+    |outExpAr . N = i2 . i1|\\
+    \begin{lcbr}
+      |outExpAr . bin = i2 . i2 . i1|\\
+      |outExpAr . uncurry Un = i2 . i2 . i2|
+    \end{lcbr}
+  \end{lcbr}
+\end{lcbr}
+%
+\just\equiv{ Igualdade extensional; Def-comp }
+%
+\begin{lcbr}
+  |outExpAr ((const X ())) = i1 ()|\\
+  \begin{lcbr}
+    |outExpAr (N a) = i2 (i1 a)|\\
+    \begin{lcbr}
+      |outExpAr (bin (op, (a, b)))) = i2 (i2 (i1 (op, (a, b))))|\\
+      |outExpAr ((uncurry Un (op, a))) = i2 (i2 (i2 (op, a)))|
+    \end{lcbr}
+  \end{lcbr}
+\end{lcbr}
+%
+\just\equiv{ Def-const; Def-bin; Def-Un }
+%
+\begin{lcbr}
+  |outExpAr X = i1 ()|\\
+  \begin{lcbr}
+    |outExpAr (N a) = i2 (i1 a)|\\
+    \begin{lcbr}
+      |outExpAr (Bin op a b) = i2 (i2 (i1 (op, (a, b))))|\\
+      |outExpAr (Un op a) = i2 (i2 (i2 (op, a)))|
+    \end{lcbr}
+  \end{lcbr}
+\end{lcbr}
+\qed
+\end{eqnarray*}
+
 \begin{code}
 outExpAr = undefined
 ---
