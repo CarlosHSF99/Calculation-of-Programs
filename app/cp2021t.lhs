@@ -1400,6 +1400,22 @@ seja a função pretendida.
 Apresentar de seguida a justificação da solução encontrada.
 
 \subsection*{Problema 3}
+Diagrama da calcLine, definida como um catamorfismo de listas.
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    |NPoint|
+           \ar[d]_-{|cataList h|}
+&
+    |1 + Rational + NPoint|
+           \ar[d]^{|1 + id >< (cataList h)|}
+           \ar[r]_-{|outList|}
+\\
+     |(expn (Overtime NPoint) (NPoint))|
+&
+     |1 + Rational + (expn (Overtime NPoint) (NPoint))|
+           \ar[l]^-{|h|}
+}
+\end{eqnarray*}
 
 \begin{code}
 calcLine :: NPoint -> (NPoint -> OverTime NPoint)
