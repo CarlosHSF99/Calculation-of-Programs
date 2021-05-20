@@ -1404,15 +1404,15 @@ Diagrama da calcLine, definida como um catamorfismo de listas.
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
     |NPoint|
-           \ar[d]_-{|cataList h|}
+           \ar[d]_-{|cataList (h)|}
 &
     |1 + Rational + NPoint|
-           \ar[d]^{|1 + id >< (cataList h)|}
+           \ar[d]^{|1 + id >< (cataList (h))|}
            \ar[r]_-{|outList|}
 \\
-     |(expn (Overtime NPoint) (NPoint))|
+     |(expn ((Overtime NPoint)) (NPoint))|
 &
-     |1 + Rational + (expn (Overtime NPoint) (NPoint))|
+     |1 + Rational + ((expn ((Overtime NPoint)) (NPoint)))|
            \ar[l]^-{|h|}
 }
 \end{eqnarray*}
@@ -1420,7 +1420,11 @@ Diagrama da calcLine, definida como um catamorfismo de listas.
 \begin{code}
 calcLine :: NPoint -> (NPoint -> OverTime NPoint)
 calcLine = cataList h where
-   h = undefined
+   h = either f g where
+     f = \_ -> const . nil
+     g(d,f) l = case l of
+        []     -> nil
+        (x:xs) -> \z -> concat $ (sequenceA [singl . linear1d d x, f xs]) z
 
 deCasteljau :: [NPoint] -> OverTime NPoint
 deCasteljau = hyloAlgForm alg coalg where
