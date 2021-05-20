@@ -1387,9 +1387,9 @@ ad_gen'' v = either (const (v, 1)) (either (split id (const 0)) (either bin un))
 \subsection*{Problema 2}
 Definir
 \begin{code}
-loop = undefined
-inic = undefined
-prj = undefined
+loop (c,t,b)  = ((t * c) `div` b, 4 + t, 1 + b)
+inic          = (1,2,2)         
+prj (c,_,_)   = c
 \end{code}
 por forma a que
 \begin{code}
