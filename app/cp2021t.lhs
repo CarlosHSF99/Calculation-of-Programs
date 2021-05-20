@@ -1384,10 +1384,15 @@ ad_gen'' v = either (const (v, 1)) (either (split id (const 0)) (either bin un))
   unop   E        = (expd >< mul) . split p1 (expd >< id)
 \end{code}
 
+\newpage
+
 \subsection*{Problema 2}
+
+%format def = "\mathbin{\stackrel{\mathrm{def}}{=}}"
+
 Definir
 \begin{code}
-loop (c,t,b)  = ((t * c) `div` b, 4 + t, 1 + b)
+loop (c,t,b)  = (div (t * c) b, 4 + t, 1 + b)
 inic          = (1,2,2)         
 prj (c,_,_)   = c
 \end{code}
@@ -1397,7 +1402,66 @@ cat = prj . (for loop inic)
 \end{code}
 seja a função pretendida.
 \textbf{NB}: usar divisão inteira.
-Apresentar de seguida a justificação da solução encontrada.
+Apresentar de seguida a justificação da solução encontrada.\\
+\\
+Fórmula que dá o n-ésimo número de Catalan:
+
+\begin{eqnarray*}
+    C_n = \frac {(2n)!} {(n+1)! (n!)}
+\end{eqnarray*}
+\\
+Funções para recursividade mútua:
+
+\begin{eqnarray*}
+    c\ n & |def| & \frac {(2n)!} {(n+1)!(n!)}\\
+    c\ 0 & = & 1\\
+    c\ (n+1) & = & \frac {4n+2} {n+2} (c\ n)\\
+\\
+    t\ n & |def| & 4n + 2\\
+    t\ 0 & = & 2\\
+    t\ (n + 1) & = & 4 + t\ n\\
+\\
+    b\ n & |def| & n + 2\\
+    b\ 0 & = & 2\\
+    b\ (n + 1) & = & 1 + b\ n
+\end{eqnarray*}
+\\
+Redefinindo c,
+
+\begin{eqnarray*}
+    c\ 0 & = & 1\\
+    c\ (n+1) & = & \frac {t\ n} {b\ n} (c\ n)\\
+             & = & \frac {(t\ n)(c\ n)} {b\ n}
+\end{eqnarray*}
+
+\newpage
+
+Desenvolvimento das expressões algébricas acima:
+
+\begin{eqnarray*}
+    c\ 0 & = & \frac {(2*0)!} {(0+1)!(0!)} = \frac {0!} {1! \times 1} = \frac {1} {1} = 1\\
+\\
+    c\ (n+1) & = & \frac {(2(n+1))!} {((n+1)+1)!((n+1)!)}\\
+             & = & \frac {(2n+2)!} {(n+2)!(n+1)!}\\
+             & = & \frac {(2n+2)(2n+1)(2n)!} {(n+2)(n+1)!(n+1)n!}\\
+             & = & \frac {(2n+2)(2n+1)} {(n+2)(n+1)} \cdot \frac {(2n)!} {(n+1)!n!}\\
+             & = & \frac {4n+2} {n+2} (c\ n)\\
+\\
+    t\ 0 & = & 4 \times 0 + 2 = 0 + 2 = 2\\
+\\
+    t\ (n + 1) & = & 4(n + 1) + 2\\
+               & = & 4n + 4 + 2\\
+               & = & 4 + (4n + 2)\\
+               & = & 4 + t n\\
+\\
+    b\ 0 & = & 0 + 2 = 2\\
+\\
+    b\ (n + 1) & = & (n + 1) + 2\\
+               & = & 1 + (n + 2)\\
+               & = & 1 + b\ n\\
+\end{eqnarray*}
+
+\newpage
 
 \subsection*{Problema 3}
 Diagrama da calcLine, definida como um catamorfismo de listas.
