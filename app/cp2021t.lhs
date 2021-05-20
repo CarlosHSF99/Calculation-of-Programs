@@ -1405,10 +1405,10 @@ Diagrama da calcLine, definida como um catamorfismo de listas.
 \xymatrix@@C=2cm{
     |NPoint|
            \ar[d]_-{|cataList (h)|}
+           \ar[r]^-{|outList|}
 &
     |1 + Rational + NPoint|
            \ar[d]^{|1 + id >< (cataList (h))|}
-           \ar[r]_-{|outList|}
 \\
      |(expn ((Overtime NPoint)) (NPoint))|
 &
