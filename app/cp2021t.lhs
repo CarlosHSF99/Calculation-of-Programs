@@ -1017,8 +1017,57 @@ sd = p2 . cataExpAr sd_gen
 ad :: Floating a => a -> ExpAr a -> a
 ad v = p2 . cataExpAr (ad_gen v)
 \end{code}
+
 \newpage
+
 Definir:
+
+\begin{code}
+outExpAr X             = i1 ()
+outExpAr (N a)         = i2 $ i1 a
+outExpAr (Bin op a b)  = i2 $ i2 $ i1 (op, (a, b))
+outExpAr (Un op a)     = i2 $ i2 $ i2 (op, a)
+---
+recExpAr f = baseExpAr id id id f f id f
+---
+g_eval_exp_pf v = either (const v) (either id (either bin un)) where
+    bin             = ap . (binop  >< id)
+    un              = ap . (unop   >< id)
+    binop  Sum      = add
+    binop  Product  = mul
+    unop   Negate   = negate
+    unop   E        = expd
+---
+clean (Bin Product (N 0) b)  = i2 $ i1 0
+clean (Bin Product a (N 0))  = i2 $ i1 0
+clean (Un E (N 0))           = i2 $ i1 1
+clean a = outExpAr a
+---
+gopt a = g_eval_exp a
+\end{code}
+
+\begin{code}
+sd_gen :: Floating a =>
+    Either () (Either a (Either (BinOp, ((ExpAr a, ExpAr a), (ExpAr a, ExpAr a))) (UnOp, (ExpAr a, ExpAr a))))
+    -> (ExpAr a, ExpAr a)
+sd_gen = either (const (X, N 1)) (either (split N (const (N 0))) (either bin un)) where
+  bin  (Sum      , ((x, x'), (y, y')))  = (Bin  Sum      x y  , Bin  Sum x' y')
+  bin  (Product  , ((x, x'), (y, y')))  = (Bin  Product  x y  , Bin  Sum (Bin Product x y') (Bin Product x' y))
+  un   (Negate   ,  (x, x'))            = (Un   Negate   x    , Un   Negate x')
+  un   (E        ,  (x, x'))            = (Un   E        x    , Bin  Product (Un E x) x')
+\end{code}
+
+\begin{code}
+ad_gen v = either (const (v, 1)) (either (split id (const 0)) (either bin un)) where
+  bin  (Sum      , ((x, x'), (y, y')))  = (x + y     , x' + y')
+  bin  (Product  , ((x, x'), (y, y')))  = (x * y     , x * y' + x' * y)
+  un   (Negate   ,  (x, x'))            = (negate x  , negate x')
+  un   (E        ,  (x, x'))            = (expd x    , expd x * x')
+\end{code}
+
+\newpage
+
+Prova da definição de outExpAr\\
 
 \begin{code}
 outExpAr :: ExpAr a -> OutExpAr a
@@ -1118,42 +1167,23 @@ outExpAr :: ExpAr a -> OutExpAr a
 \qed
 \end{eqnarray*}
 
-\begin{code}
-g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (UnOp, a))) -> a
+\newpage
 
-ev = eval_exp
-g = g_eval_exp
-\end{code}
-
+Prova da definição de g\_eval\_exp
+\\
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
     |ExpAr A|
-    ¦   ¦   \ar[d]_-{|eval_exp a|}
+    ¦   ¦   \ar[d]_-{|eval_exp v|}
 &
     |1 + (A + (BinOp >< (ExpAr A >< ExpAr A) + UnOp >< ExpAr A))|
-    ¦   ¦   \ar[d]^{|id + (id + (id >< (eval_exp a >< eval_exp a) + id >< eval_exp a))|}
+    ¦   ¦   \ar[d]^{|id + (id + (id >< (eval_exp v >< eval_exp v) + id >< eval_exp v))|}
     ¦   ¦   \ar[l]_-{|inExpAr|}
 \\
     |A|
 &
     |1 + (A + (BinOp >< (A >< A) + UnOp >< A))|
-    ¦   ¦   \ar[l]^-{|g_eval_exp|}
-}
-\end{eqnarray*}
-
-\begin{eqnarray*}
-\xymatrix@@C=2cm{
-    |ExpAr A|
-    ¦   ¦   \ar[d]_-{|eval_exp a|}
-&
-    |OutExpAr A|
-    ¦   ¦   \ar[d]^{|fF (eval_exp a)|}
-    ¦   ¦   \ar[l]_-{|inT|}
-\\
-    |A|
-&
-    |fF A|
-    ¦   ¦   \ar[l]^-{|g_eval_exp|}
+    ¦   ¦   \ar[l]^-{|g_eval_exp v|}
 }
 \end{eqnarray*}
 
@@ -1161,11 +1191,12 @@ g = g_eval_exp
 %format g2 = "g_2"
 %format g3 = "g_3"
 %format g4 = "g_4"
+
 \begin{eqnarray*}
 \start
-	|(ev v) . inT = g . fF (ev v)|
+	|(eval_exp v) . inExpAr = g_eval_exp . fF (ev v)|
 %
-\just\equiv{ Def-inExpAr; \ Def-F }
+\just\equiv{ Def-inExpAr; \ Def-F; \ ev v := eval\_exp v; \ g v := g\_eval\_exp v }
 %
 	|(ev v) . either (const X) (either N (either bin (uncurry Un))) = g . (id + (id + (id >< (ev v >< ev v) + id >< ev v)))|
 %
@@ -1181,208 +1212,72 @@ g = g_eval_exp
 %
 \begin{lcbr}
   |(ev v) . (const X) = g1|\\
-  |(ev v) . N = g2|\\
-  |(ev v) . bin = g3 . (id >< (ev v >< ev v))|\\
-  |(ev v) . (uncurry Un) = g4 . (id >< ev v)|
+  \begin{lcbr}
+    |(ev v) . N = g2|\\
+    \begin{lcbr}
+      |(ev v) . bin = g3 . (id >< (ev v >< ev v))|\\
+      |(ev v) . (uncurry Un) = g4 . (id >< ev v)|
+    \end{lcbr}
+  \end{lcbr}
 \end{lcbr}
 %
 \just\equiv{ Igualdade extensional; \ Def-comp }
 %
 \begin{lcbr}
   |ev v ((const X) ()) = g1 ()|\\
-  |ev v (N a) = g2 a|\\
-  |ev v (bin (binop, (a, b))) = g3 ((id >< (ev v >< ev v)) (binop, (a, b)))|\\
-  |ev v ((uncurry Un) (unop, a)) = g4 ((id >< ev v) (unop, a))|
+  \begin{lcbr}
+    |ev v (N a) = g2 a|\\
+    \begin{lcbr}
+      |ev v (bin (binop, (a, b))) = g3 ((id >< (ev v >< ev v)) (binop, (a, b)))|\\
+      |ev v ((uncurry Un) (unop, a)) = g4 ((id >< ev v) (unop, a))|
+    \end{lcbr}
+  \end{lcbr}
 \end{lcbr}
 %
 \just\equiv{ Def-const; \ Def-N; \ Def-bin; \ Def-|uncurry Un|; \ Def-|><| }
 %
 \begin{lcbr}
   |ev v X = g1 ()|\\
-  |ev v (N a) = g2 a|\\
-  |ev v (Bin binop a b) = g3 (binop, (ev v a, ev v b))|\\
-  |ev v (Un unop a) = g4 (unop, ev v a)|
+  \begin{lcbr}
+    |ev v (N a) = g2 a|\\
+    \begin{lcbr}
+      |ev v (Bin binop a b) = g3 (binop, (ev v a, ev v b))|\\
+      |ev v (Un unop a) = g4 (unop, ev v a)|
+    \end{lcbr}
+  \end{lcbr}
 \end{lcbr}
 %
-\just\equiv{ Parametrizar binop e unop }
+\just\equiv{ Pattern matching em binop e unop }
 %
 \begin{lcbr}
   |ev v X = g1 ()|\\
-  |ev v (N a) = g2 a|\\
-  |ev v (Bin Sum a b) = g3 (Sum, (ev v a, ev v b))|\\
-  |ev v (Bin Product a b) = g3 (Product, (ev v a, ev v b))|\\
-  |ev v (Un Negate a) = g4 (Negate, ev v a)|\\
-  |ev v (Un E a) = g4 (E, ev v a)|
+  \begin{lcbr}
+    |ev v (N a) = g2 a|\\
+    \begin{lcbr}
+      |ev v (Bin Sum a b) = g3 (Sum, (ev v a, ev v b))|\\
+      |ev v (Bin Product a b) = g3 (Product, (ev v a, ev v b))|\\
+      |ev v (Un Negate a) = g4 (Negate, ev v a)|\\
+      |ev v (Un E a) = g4 (E, ev v a)|
+    \end{lcbr}
+  \end{lcbr}
 \end{lcbr}
 %
-\just\equiv{ Def-ev }
-%
-\begin{lcbr}
-  |v = g1 ()|\\
-  |N a = g2 a|\\
-  |v1 + v2 = g3 (Sum, (v1, v2))|\\
-  |v1 * v2 = g3 (Product, (v1, v2))|\\
-  |negate v1 = g4 (Negate, v1)|\\
-  |expd v1 = g4 (E, v1)|
-\end{lcbr}
-%
-\just\equiv{ f = g $\equiv$ g = f }
+\just\equiv{ Def-ev; \ f = g $\equiv$ g = f }
 %
 \begin{lcbr}
   |g1 () = v|\\
-  |g2 a = N a|\\
-  |g3 (Sum, (v1, v2)) = v1 + v2|\\
-  |g3 (Product, (v1, v2)) = v1 * v2|\\
-  |g4 (Negate, v1) = negate v1|\\
-  |g4 (E, v1) = expd v1|
-\end{lcbr}
-%
-\just\equiv{ uncurry +; add := uncurry + e outras }
-%
-\begin{lcbr}
-  |g1 () = v|\\
-  |g2 a = N a|\\
-  |g3 (Sum, (v1, v2)) = add (v1, v2)|\\
-  |g3 (Product, (v1, v2)) = mul (v1, v2)|\\
-  |g4 (Negate, v1) = negate v1|\\
-  |g4 (E, v1) = expd v1|
-\end{lcbr}
-%
-\just\equiv{ uncurry +; add := uncurry + e outras }
-%
-\begin{lcbr}
-  |g1 () = v|\\
-  |g2 a = N a|\\
-  |g3 (Sum, (v1, v2)) = add (p2 (Sum, (v1, v2)))|\\
-  |g3 (Product, (v1, v2)) = mul (p2 (Product, (v1, v2)))|\\
-  |g4 (Negate, v1) = negate (p2 (Negate, v1))|\\
-  |g4 (E, v1) = expd (p2 (E, v1))|
-\end{lcbr}
-%
-\just\equiv{ Def-comp; \ Igualdade extensional }
-%
-\begin{lcbr}
-  |g1 = const v|\\
-  |g2 = N|\\
-  |g3 = add · p2|\\
-  |g3 = mul · p2|\\
-  |g4 = negate . p2|\\
-  |g4 = expd . p2|
+  \begin{lcbr}
+    |g2 a = N a|\\
+    \begin{lcbr}
+      |g3 (Sum, (v1, v2)) = v1 + v2|\\
+      |g3 (Product, (v1, v2)) = v1 * v2|\\
+      |g4 (Negate, v1) = negate v1|\\
+      |g4 (E, v1) = expd v1|
+    \end{lcbr}
+  \end{lcbr}
 \end{lcbr}
 \qed
 \end{eqnarray*}
-
-\newpage
-
-%format (cond (a) (b) (c)) = "{" a "} \rightarrow {" b "}, {" c "}"
-%%format (cond a (b) (c)) = "\alt{" b "}{" c "} \cdot {" a "}?"
-\begin{code}
-outExpAr X             = i1 ()
-outExpAr (N a)         = i2 $ i1 a
-outExpAr (Bin op a b)  = i2 $ i2 $ i1 (op, (a, b))
-outExpAr (Un op a)     = i2 $ i2 $ i2 (op, a)
----
-recExpAr f = baseExpAr id id id f f id f
----
--- Point wise definition
-g_eval_exp v = either g1 (either g2 (either g3 g4)) where
-    g1 ()                 = v
-    g2 a                  = a
-    g3 (Sum,     (a, b))  = a + b
-    g3 (Product, (a, b))  = a * b
-    g4 (Negate, a)        = negate a
-    g4 (E,      a)        = expd a
-
--- Fancy point free definition cant find unfancy way of doing it
-g_eval_exp_pf v = either (const v) (either id (either bin un)) where
-    bin             = ap . (binop  >< id)
-    un              = ap . (unop   >< id)
-    binop  Sum      = add
-    binop  Product  = mul
-    unop   Negate   = negate
-    unop   E        = expd
-
--- Point wise with conditionals
-g_eval_exp_cpw v = either g1 (either g2 (either g3 g4)) where
-    g1 () = v
-    g2 a  = a
-    g3 (binop, (a, b))  | binop == Sum  = a + b
-                        | otherwise     = a * b
-    g4 (unop, a)  | unop == Negate  = negate a 
-                  | otherwise       = expd a
-
--- Point free with conditionals
-g_eval_exp_cpf v = either g1 (either g2 (either g3 g4)) where
-    g1 = const v
-    g2 = id
-    g3 = cond ((Sum ==) . p1) (add . p2) (mul . p2)
-    g4 = cond ((Negate ==) . p1) (negate . p2) (expd . p2)
----
---clean :: (Eq a, Num a) => ExpAr a -> Either () (Either a (Either (BinOp, (ExpAr a, ExpAr a)) (UnOp, ExpAr a)))
-clean (Bin Product (N 0) b)  = i2 $ i1 0
-clean (Bin Product a (N 0))  = i2 $ i1 0
-clean (Un E (N 0))           = i2 $ i1 1
-clean a = outExpAr a
----
-gopt a = g_eval_exp a
-\end{code}
-
-\begin{code}
-sd_gen :: Floating a =>
-    Either () (Either a (Either (BinOp, ((ExpAr a, ExpAr a), (ExpAr a, ExpAr a))) (UnOp, (ExpAr a, ExpAr a))))
-    -> (ExpAr a, ExpAr a)
-sd_gen = either (const (X, N 1)) (either (split N (const (N 0))) (either bin un)) where
-  bin  (Sum      , ((x, x'), (y, y')))  = (Bin  Sum      x y  , Bin  Sum x' y')
-  bin  (Product  , ((x, x'), (y, y')))  = (Bin  Product  x y  , Bin  Sum (Bin Product x y') (Bin Product x' y))
-  un   (Negate   ,  (x, x'))            = (Un   Negate   x    , Un   Negate x')
-  un   (E        ,  (x, x'))            = (Un   E        x    , Bin  Product (Un E x) x')
----
-sd_gen' :: Floating a =>
-    Either () (Either a (Either (BinOp, ((ExpAr a, ExpAr a), (ExpAr a, ExpAr a))) (UnOp, (ExpAr a, ExpAr a))))
-    -> (ExpAr a, ExpAr a)
-sd_gen' = either (const (X, N 1)) (either (split N (const (N 0))) (either bin un)) where
-  bin  = ap . (binop  >< id)
-  un   = ap . (unop   >< id)
-  binop  Sum      = split (uncurry (Bin Sum) . (p1 >< p1)) (uncurry (Bin Sum) . (p2 >< p2))
-  binop  Product  = split (uncurry (Bin Product) . (p1 >< p1)) (uncurry (Bin Sum) . split (uncurry (Bin Product) . (p1 >< p2)) (uncurry (Bin Product) . (p2 >< p1)))
-  unop   Negate   = (Un Negate >< Un Negate)
-  unop   E        = split (Un E . p1) (uncurry (Bin Product) . (Un E >< id))
----
-sd_gen'' :: Floating a =>
-    Either () (Either a (Either (BinOp, ((ExpAr a, ExpAr a), (ExpAr a, ExpAr a))) (UnOp, (ExpAr a, ExpAr a))))
-    -> (ExpAr a, ExpAr a)
-sd_gen'' = either (const (X, N 1)) (either (split N (const (N 0))) (either bin un)) where
-  bin  = ap . (binop  >< id)
-  un   = ap . (unop   >< id)
-  binop  Sum      = (uncurry (Bin Sum) >< uncurry (Bin Sum)) . split (p1 >< p1) (p2 >< p2)
-  binop  Product  = (uncurry (Bin Product) >< uncurry (Bin Sum) . (uncurry (Bin Product) >< uncurry (Bin Product))) . split (p1 >< p1) (split (p1 >< p2) (p2 >< p1))
-  unop   Negate   = (Un Negate >< Un Negate)
-  unop   E        = (Un E >< uncurry (Bin Product)) . split p1 (Un E >< id)
-\end{code}
-
-\begin{code}
-ad_gen v = either (const (v, 1)) (either (split id (const 0)) (either bin un)) where
-  bin  (Sum      , ((x, x'), (y, y')))  = (x + y     , x' + y')
-  bin  (Product  , ((x, x'), (y, y')))  = (x * y     , x * y' + x' * y)
-  un   (Negate   ,  (x, x'))            = (negate x  , negate x')
-  un   (E        ,  (x, x'))            = (expd x    , expd x * x')
----
-ad_gen' v = either (const (v, 1)) (either (split id (const 0)) (either bin un)) where
-  bin  = ap . (binop  >< id)
-  un   = ap . (unop   >< id)
-  binop  Sum      = split (add . (p1 >< p1)) (add . (p2 >< p2))
-  binop  Product  = split (mul . (p1 >< p1)) (add . split (mul . (p1 >< p2)) (mul . (p2 >< p1)))
-  unop   Negate   = (negate >< negate)
-  unop   E        = split (expd . p1) (mul . (expd >< id))
----
-ad_gen'' v = either (const (v, 1)) (either (split id (const 0)) (either bin un)) where
-  bin  = ap . (binop  >< id)
-  un   = ap . (unop   >< id)
-  binop  Sum      = (add >< add) . split (p1 >< p1) (p2 >< p2)
-  binop  Product  = (mul >< add . (mul >< mul)) . split (p1 >< p1) (split (p1 >< p2) (p2 >< p1))
-  unop   Negate   = (negate >< negate)
-  unop   E        = (expd >< mul) . split p1 (expd >< id)
-\end{code}
 
 \newpage
 
@@ -1519,6 +1414,152 @@ Inserir em baixo o código \Fsharp\ desenvolvido, entre \verb!\begin{verbatim}! 
 
 \begin{verbatim}
 \end{verbatim}
+
+\newpage
+
+\subsection*{Outras soluções}
+
+\begin{code}
+g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (UnOp, a))) -> a
+
+ev = eval_exp
+g = g_eval_exp
+\end{code}
+
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    |ExpAr A|
+    ¦   ¦   \ar[d]_-{|eval_exp a|}
+&
+    |OutExpAr A|
+    ¦   ¦   \ar[d]^{|fF (eval_exp a)|}
+    ¦   ¦   \ar[l]_-{|inT|}
+\\
+    |A|
+&
+    |fF A|
+    ¦   ¦   \ar[l]^-{|g_eval_exp|}
+}
+\end{eqnarray*}
+
+\begin{eqnarray*}
+\start
+\begin{lcbr}
+  |g1 () = v|\\
+  |g2 a = N a|\\
+  |g3 (Sum, (v1, v2)) = v1 + v2|\\
+  |g3 (Product, (v1, v2)) = v1 * v2|\\
+  |g4 (Negate, v1) = negate v1|\\
+  |g4 (E, v1) = expd v1|
+\end{lcbr}
+%
+\just\equiv{ uncurry +; add := uncurry + e outras }
+%
+\begin{lcbr}
+  |g1 () = v|\\
+  |g2 a = N a|\\
+  |g3 (Sum, (v1, v2)) = add (v1, v2)|\\
+  |g3 (Product, (v1, v2)) = mul (v1, v2)|\\
+  |g4 (Negate, v1) = negate v1|\\
+  |g4 (E, v1) = expd v1|
+\end{lcbr}
+%
+\just\equiv{ uncurry +; add := uncurry + e outras }
+%
+\begin{lcbr}
+  |g1 () = v|\\
+  |g2 a = N a|\\
+  |g3 (Sum, (v1, v2)) = add (p2 (Sum, (v1, v2)))|\\
+  |g3 (Product, (v1, v2)) = mul (p2 (Product, (v1, v2)))|\\
+  |g4 (Negate, v1) = negate (p2 (Negate, v1))|\\
+  |g4 (E, v1) = expd (p2 (E, v1))|
+\end{lcbr}
+%
+\just\equiv{ Def-comp; \ Igualdade extensional }
+%
+\begin{lcbr}
+  |g1 = const v|\\
+  |g2 = N|\\
+  |g3 = add · p2|\\
+  |g3 = mul · p2|\\
+  |g4 = negate . p2|\\
+  |g4 = expd . p2|
+\end{lcbr}
+\qed
+\end{eqnarray*}
+
+\begin{code}
+-- Point wise definition
+g_eval_exp v = either g1 (either g2 (either g3 g4)) where
+    g1 ()                 = v
+    g2 a                  = a
+    g3 (Sum,     (a, b))  = a + b
+    g3 (Product, (a, b))  = a * b
+    g4 (Negate, a)        = negate a
+    g4 (E,      a)        = expd a
+--
+-- Point wise with conditionals
+g_eval_exp_cpw v = either g1 (either g2 (either g3 g4)) where
+    g1 () = v
+    g2 a  = a
+    g3 (binop, (a, b))  | binop == Sum  = a + b
+                        | otherwise     = a * b
+    g4 (unop, a)  | unop == Negate  = negate a 
+                  | otherwise       = expd a
+--
+-- Point free with conditionals
+g_eval_exp_cpf v = either g1 (either g2 (either g3 g4)) where
+    g1 = const v
+    g2 = id
+    g3 = cond ((Sum ==) . p1) (add . p2) (mul . p2)
+    g4 = cond ((Negate ==) . p1) (negate . p2) (expd . p2)
+\end{code}
+
+\begin{code}
+-- Point free definition
+sd_gen_pf :: Floating a =>
+    Either () (Either a (Either (BinOp, ((ExpAr a, ExpAr a), (ExpAr a, ExpAr a))) (UnOp, (ExpAr a, ExpAr a))))
+    -> (ExpAr a, ExpAr a)
+sd_gen_pf = either (const (X, N 1)) (either (split N (const (N 0))) (either bin un)) where
+  bin  = ap . (binop  >< id)
+  un   = ap . (unop   >< id)
+  binop  Sum      = split (uncurry (Bin Sum) . (p1 >< p1)) (uncurry (Bin Sum) . (p2 >< p2))
+  binop  Product  = split (uncurry (Bin Product) . (p1 >< p1)) (uncurry (Bin Sum) . split (uncurry (Bin Product) . (p1 >< p2)) (uncurry (Bin Product) . (p2 >< p1)))
+  unop   Negate   = (Un Negate >< Un Negate)
+  unop   E        = split (Un E . p1) (uncurry (Bin Product) . (Un E >< id))
+---
+-- Point free definition with absorption-+
+sd_gen_pf_ab :: Floating a =>
+    Either () (Either a (Either (BinOp, ((ExpAr a, ExpAr a), (ExpAr a, ExpAr a))) (UnOp, (ExpAr a, ExpAr a))))
+    -> (ExpAr a, ExpAr a)
+sd_gen_pf_ab = either (const (X, N 1)) (either (split N (const (N 0))) (either bin un)) where
+  bin  = ap . (binop  >< id)
+  un   = ap . (unop   >< id)
+  binop  Sum      = (uncurry (Bin Sum) >< uncurry (Bin Sum)) . split (p1 >< p1) (p2 >< p2)
+  binop  Product  = (uncurry (Bin Product) >< uncurry (Bin Sum) . (uncurry (Bin Product) >< uncurry (Bin Product))) . split (p1 >< p1) (split (p1 >< p2) (p2 >< p1))
+  unop   Negate   = (Un Negate >< Un Negate)
+  unop   E        = (Un E >< uncurry (Bin Product)) . split p1 (Un E >< id)
+\end{code}
+
+\begin{code}
+-- Point free definition
+ad_gen_pf v = either (const (v, 1)) (either (split id (const 0)) (either bin un)) where
+  bin  = ap . (binop  >< id)
+  un   = ap . (unop   >< id)
+  binop  Sum      = split (add . (p1 >< p1)) (add . (p2 >< p2))
+  binop  Product  = split (mul . (p1 >< p1)) (add . split (mul . (p1 >< p2)) (mul . (p2 >< p1)))
+  unop   Negate   = (negate >< negate)
+  unop   E        = split (expd . p1) (mul . (expd >< id))
+---
+-- Point free definition with absorption-+
+ad_gen_pf_ab v = either (const (v, 1)) (either (split id (const 0)) (either bin un)) where
+  bin  = ap . (binop  >< id)
+  un   = ap . (unop   >< id)
+  binop  Sum      = (add >< add) . split (p1 >< p1) (p2 >< p2)
+  binop  Product  = (mul >< add . (mul >< mul)) . split (p1 >< p1) (split (p1 >< p2) (p2 >< p1))
+  unop   Negate   = (negate >< negate)
+  unop   E        = (expd >< mul) . split p1 (expd >< id)
+\end{code}
 
 %----------------- Fim do anexo com soluções dos alunos ------------------------%
 
