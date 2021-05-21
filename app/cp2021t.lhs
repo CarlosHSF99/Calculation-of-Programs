@@ -1169,8 +1169,11 @@ outExpAr :: ExpAr a -> OutExpAr a
 
 \newpage
 
-Prova da definição de g\_eval\_exp
-\\
+Prova da definição de g\_eval\_exp\\
+
+\begin{code}
+g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (UnOp, a))) -> a
+\end{code}
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
     |ExpAr A|
@@ -1194,7 +1197,7 @@ Prova da definição de g\_eval\_exp
 
 \begin{eqnarray*}
 \start
-	|(eval_exp v) . inExpAr = g_eval_exp . fF (ev v)|
+	|(eval_exp v) . inExpAr = g_eval_exp . fF (eval_exp v)|
 %
 \just\equiv{ Def-inExpAr; \ Def-F; \ ev v := eval\_exp v; \ g v := g\_eval\_exp v }
 %
@@ -1419,12 +1422,7 @@ Inserir em baixo o código \Fsharp\ desenvolvido, entre \verb!\begin{verbatim}! 
 
 \subsection*{Outras soluções}
 
-\begin{code}
-g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (UnOp, a))) -> a
-
-ev = eval_exp
-g = g_eval_exp
-\end{code}
+Outro diagrama do catamorfismo eval\_exp mais simples (talvez fosse melhor usar este) 
 
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
@@ -1446,44 +1444,60 @@ g = g_eval_exp
 \start
 \begin{lcbr}
   |g1 () = v|\\
-  |g2 a = N a|\\
-  |g3 (Sum, (v1, v2)) = v1 + v2|\\
-  |g3 (Product, (v1, v2)) = v1 * v2|\\
-  |g4 (Negate, v1) = negate v1|\\
-  |g4 (E, v1) = expd v1|
+  \begin{lcbr}
+    |g2 a = N a|\\
+    \begin{lcbr}
+      |g3 (Sum, (v1, v2)) = v1 + v2|\\
+      |g3 (Product, (v1, v2)) = v1 * v2|\\
+      |g4 (Negate, v1) = negate v1|\\
+      |g4 (E, v1) = expd v1|
+    \end{lcbr}
+  \end{lcbr}
 \end{lcbr}
 %
 \just\equiv{ uncurry +; add := uncurry + e outras }
 %
 \begin{lcbr}
   |g1 () = v|\\
-  |g2 a = N a|\\
-  |g3 (Sum, (v1, v2)) = add (v1, v2)|\\
-  |g3 (Product, (v1, v2)) = mul (v1, v2)|\\
-  |g4 (Negate, v1) = negate v1|\\
-  |g4 (E, v1) = expd v1|
+  \begin{lcbr}
+    |g2 a = N a|\\
+    \begin{lcbr}
+      |g3 (Sum, (v1, v2)) = add (v1, v2)|\\
+      |g3 (Product, (v1, v2)) = mul (v1, v2)|\\
+      |g4 (Negate, v1) = negate v1|\\
+      |g4 (E, v1) = expd v1|
+    \end{lcbr}
+  \end{lcbr}
 \end{lcbr}
 %
 \just\equiv{ uncurry +; add := uncurry + e outras }
 %
 \begin{lcbr}
   |g1 () = v|\\
-  |g2 a = N a|\\
-  |g3 (Sum, (v1, v2)) = add (p2 (Sum, (v1, v2)))|\\
-  |g3 (Product, (v1, v2)) = mul (p2 (Product, (v1, v2)))|\\
-  |g4 (Negate, v1) = negate (p2 (Negate, v1))|\\
-  |g4 (E, v1) = expd (p2 (E, v1))|
+  \begin{lcbr}
+    |g2 a = N a|\\
+    \begin{lcbr}
+      |g3 (Sum, (v1, v2)) = add (p2 (Sum, (v1, v2)))|\\
+      |g3 (Product, (v1, v2)) = mul (p2 (Product, (v1, v2)))|\\
+      |g4 (Negate, v1) = negate (p2 (Negate, v1))|\\
+      |g4 (E, v1) = expd (p2 (E, v1))|
+    \end{lcbr}
+  \end{lcbr}
 \end{lcbr}
 %
 \just\equiv{ Def-comp; \ Igualdade extensional }
 %
 \begin{lcbr}
   |g1 = const v|\\
-  |g2 = N|\\
-  |g3 = add · p2|\\
-  |g3 = mul · p2|\\
-  |g4 = negate . p2|\\
-  |g4 = expd . p2|
+  \begin{lcbr}
+    |g2 = N|\\
+    \begin{lcbr}
+      |g3 = add · p2|\\
+      |g3 = mul · p2|\\
+      |g4 = negate . p2|\\
+      |g4 = expd . p2|
+    \end{lcbr}
+  \end{lcbr}
 \end{lcbr}
 \qed
 \end{eqnarray*}
