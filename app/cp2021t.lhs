@@ -702,7 +702,6 @@ Verifique as suas funções testando a propriedade seguinte:
 A média de uma lista não vazia e de uma \LTree\ com os mesmos elementos coincide,
 a menos de um erro de 0.1 milésimas:
 \begin{code}
-prop_avg :: Ord a => [a] -> Property
 prop_avg = nonempty .==>. diff .<=. const 0.000001 where
    diff l = avg l - (avgLTree . genLTree) l
    genLTree = anaLTree lsplit
@@ -1030,7 +1029,7 @@ outExpAr (Un op a)     = i2 $ i2 $ i2 (op, a)
 ---
 recExpAr f = baseExpAr id id id f f id f
 ---
-g_eval_exp_pf v = either (const v) (either id (either bin un)) where
+g_eval_exp v = either (const v) (either id (either bin un)) where
     bin             = ap . (binop  >< id)
     un              = ap . (unop   >< id)
     binop  Sum      = add
@@ -1290,9 +1289,9 @@ g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (Un
 
 Definir
 \begin{code}
-loop (c,t,b)  = (div (t * c) b, 4 + t, 1 + b)
-inic          = (1,2,2)         
-prj (c,_,_)   = c
+loop  (c,t,b)  = (div (t * c) b, 4 + t, 1 + b)
+inic           = (1,2,2)         
+prj   (c,_,_)  = c
 \end{code}
 por forma a que
 \begin{code}
@@ -1404,12 +1403,27 @@ avg = p1.avg_aux
 \end{code}
 
 \begin{code}
-avg_aux = undefined
+outListN [a]     = i1 a
+outListN (a:as)  = i2 (a,as)
+
+cataListN g = g . recList (cataListN g) . outListN
+\end{code}
+
+\begin{code}
+avg_aux = cataListN $ either init loop where
+    init a          = (a, 1)
+    loop (a,(b,c))  = ((a + (b * c)) / (c + 1), c + 1)
+
+avg_aux_pf = cataListN $ either (split id one) (split (uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2)) (succ . p2 . p2))
 \end{code}
 Solução para árvores de tipo \LTree:
 \begin{code}
 avgLTree = p1.cataLTree gene where
-   gene = undefined
+    gene = either init loop
+    init a = (a, 1)
+    loop ((a1,b1),(a2,b2)) = ((a1 * b1 + a2 * b2) / (b1 + b2), (b1 + b2))
+
+avgLTree_pf = cataLTree $ either (split id one) (split (uncurry (/) . split (add . (mul >< mul)) (add . (p2 >< p2))) (add . (p2 >< p2)))
 \end{code}
 
 \subsection*{Problema 5}
@@ -1504,7 +1518,7 @@ Outro diagrama do catamorfismo eval\_exp mais simples (talvez fosse melhor usar 
 
 \begin{code}
 -- Point wise definition
-g_eval_exp v = either g1 (either g2 (either g3 g4)) where
+g_eval_exp_pw v = either g1 (either g2 (either g3 g4)) where
     g1 ()                 = v
     g2 a                  = a
     g3 (Sum,     (a, b))  = a + b

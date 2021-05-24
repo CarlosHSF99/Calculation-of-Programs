@@ -185,6 +185,7 @@ dup = split id id
 
 zero = const 0
 
+one :: Num a => b -> a
 one  = const 1
 
 nil = const []
