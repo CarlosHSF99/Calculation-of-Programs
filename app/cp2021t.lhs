@@ -997,6 +997,32 @@ texto, disgramas e/ou outras funções auxiliares que sejam necessárias.
 Valoriza-se a escrita de \emph{pouco} código que corresponda a soluções
 simples e elegantes.
 
+\subsection*{Funções básicas dos alunos}
+
+Redefinição polinomial de funções no capítulo 8 da biblioteca Cp, \textit{Basic functions, abbreviations}, que sofreram da \textbf{Restrição de Monomorsfismos}\footnote{Fonte: \href{https://wiki.haskell.org/Monomorphism_restriction}{HaskellWiki}.}:\\
+
+\setlength{\leftskip}{1.4cm}
+\setlength{\rightskip}{1.4cm}
+
+\noindent\textit{"The "monomorphism restriction"\ is a counter-intuitive rule in Haskell type inference. If you forget to provide a type signature, sometimes this rule will fill the free type variables with specific types using "type defaulting"\ rules. The resulting type signature is always less polymorphic than you'd expect, so often this results in the compiler throwing type errors at you in situations where you expected it to infer a perfectly sane type for a polymorphic expression."}
+
+\setlength{\leftskip}{0pt}
+\setlength{\rightskip}{0pt}
+
+\begin{code}
+zeroP :: Num a => b -> a
+zeroP = const 0
+
+oneP :: Num a => b -> a
+oneP = const 1
+
+addP :: Num c => (c, c) -> c
+addP = uncurry (+)
+
+mulP :: Num c => (c, c) -> c
+mulP = uncurry (*)
+\end{code}
+
 \subsection*{Problema 1} \label{pg:P1}
 São dadas:
 \begin{code}
@@ -1019,7 +1045,7 @@ ad v = p2 . cataExpAr (ad_gen v)
 
 \newpage
 
-Definir:
+\noindent Definir:
 
 \begin{code}
 outExpAr X             = i1 ()
@@ -1032,8 +1058,8 @@ recExpAr f = baseExpAr id id id f f id f
 g_eval_exp v = either (const v) (either id (either bin un)) where
     bin             = ap . (binop  >< id)
     un              = ap . (unop   >< id)
-    binop  Sum      = add
-    binop  Product  = mul
+    binop  Sum      = addP
+    binop  Product  = mulP
     unop   Negate   = negate
     unop   E        = expd
 ---
@@ -1066,7 +1092,7 @@ ad_gen v = either (const (v, 1)) (either (split id (const 0)) (either bin un)) w
 
 \newpage
 
-Prova da definição de outExpAr\\
+\noindent Prova da definição de outExpAr\\
 
 \begin{code}
 outExpAr :: ExpAr a -> OutExpAr a
@@ -1168,7 +1194,7 @@ outExpAr :: ExpAr a -> OutExpAr a
 
 \newpage
 
-Prova da definição de g\_eval\_exp\\
+\noindent Prova da definição de g\_eval\_exp\\
 
 \begin{code}
 g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (UnOp, a))) -> a
@@ -1333,7 +1359,7 @@ Redefinindo c,
 
 \newpage
 
-Desenvolvimento das expressões algébricas acima:
+\noident Desenvolvimento das expressões algébricas acima:
 
 \begin{eqnarray*}
     c\ 0 & = & \frac {(2*0)!} {(0+1)!(0!)} = \frac {0!} {1! \times 1} = \frac {1} {1} = 1\\
@@ -1379,7 +1405,7 @@ deCasteljau = hyloAlgForm alg coalg where
 hyloAlgForm = undefined
 \end{code}
 
-Diagrama da calcLine, definida como um catamorfismo de listas.
+\noident Diagrama da calcLine, definida como um catamorfismo de listas.
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
     |NPoint|
@@ -1402,16 +1428,16 @@ Diagrama da calcLine, definida como um catamorfismo de listas.
 
 %format (cataListN (x)) = "\llparenthesis\, " x "\,\rrparenthesis"
 
-Solução para listas não vazias:
-\begin{code}
-avg = p1.avg_aux
-\end{code}
-
+Definições de funções para catamorfismos sobre listas não vazias:
 \begin{code}
 outListN [a]     = i1 a
 outListN (a:as)  = i2 (a,as)
 
 cataListN g = g . recList (cataListN g) . outListN
+\end{code}
+Solução para listas não vazias:
+\begin{code}
+avg = p1.avg_aux
 \end{code}
 
 \begin{code}
@@ -1434,7 +1460,7 @@ avgLTree = p1.cataLTree gene where
 %format q1 = "q_1"
 %format q2 = "q_2"
 
-Definição do gene de avg\_aux
+\noindent Definição do gene de avg\_aux
 
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
@@ -1544,7 +1570,7 @@ Definição do gene de avg\_aux
 %format a1 = "a_1"
 %format a2 = "a_2"
 
-Definição do gene de avgLTree
+\noindent Definição do gene de avgLTree
 
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
@@ -1764,7 +1790,7 @@ g_eval_exp_cpw v = either g1 (either g2 (either g3 g4)) where
 g_eval_exp_cpf v = either g1 (either g2 (either g3 g4)) where
     g1 = const v
     g2 = id
-    g3 = cond ((Sum ==) . p1) (add . p2) (mul . p2)
+    g3 = cond ((Sum ==) . p1) (addP . p2) (mulP . p2)
     g4 = cond ((Negate ==) . p1) (negate . p2) (expd . p2)
 \end{code}
 
@@ -1799,22 +1825,22 @@ sd_gen_pf_ab = either (const (X, N 1)) (either (split N (const (N 0))) (either b
 ad_gen_pf v = either (const (v, 1)) (either (split id (const 0)) (either bin un)) where
   bin  = ap . (binop  >< id)
   un   = ap . (unop   >< id)
-  binop  Sum      = split (add . (p1 >< p1)) (add . (p2 >< p2))
-  binop  Product  = split (mul . (p1 >< p1)) (add . split (mul . (p1 >< p2)) (mul . (p2 >< p1)))
+  binop  Sum      = split (addP . (p1 >< p1)) (addP . (p2 >< p2))
+  binop  Product  = split (mulP . (p1 >< p1)) (addP . split (mulP . (p1 >< p2)) (mulP . (p2 >< p1)))
   unop   Negate   = (negate >< negate)
-  unop   E        = split (expd . p1) (mul . (expd >< id))
+  unop   E        = split (expd . p1) (mulP . (expd >< id))
 ---
 -- Point free definition with absorption-+
 ad_gen_pf_ab v = either (const (v, 1)) (either (split id (const 0)) (either bin un)) where
   bin  = ap . (binop  >< id)
   un   = ap . (unop   >< id)
-  binop  Sum      = (add >< add) . split (p1 >< p1) (p2 >< p2)
-  binop  Product  = (mul >< add . (mul >< mul)) . split (p1 >< p1) (split (p1 >< p2) (p2 >< p1))
+  binop  Sum      = (addP >< addP) . split (p1 >< p1) (p2 >< p2)
+  binop  Product  = (mulP >< addP . (mulP >< mulP)) . split (p1 >< p1) (split (p1 >< p2) (p2 >< p1))
   unop   Negate   = (negate >< negate)
-  unop   E        = (expd >< mul) . split p1 (expd >< id)
+  unop   E        = (expd >< mulP) . split p1 (expd >< id)
 \end{code}
 
-Definição point-free de avg\_aux
+\noindent Definição point-free de avg\_aux
 
 \begin{eqnarray*}
 \start
@@ -1853,10 +1879,25 @@ Definição point-free de avg\_aux
 \end{eqnarray*}
 
 \begin{code}
-avg_aux_pf = cataListN (either (split id one) (split (uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2)) (succ . p2 . p2)))
+avg_aux_pf = cataListN (either (split id oneP) (split (uncurry (/) . split (addP . (id >< mulP)) (succ . p2 . p2)) (succ . p2 . p2)))
 
 avgLTree_pf = p1 . cataLTree gene where
-    gene = either (split id one) (split (uncurry (/) . split (add . (mul >< mul)) (add . (p2 >< p2))) (add . (p2 >< p2)))
+    gene = either (split id oneP) (split (uncurry (/) . split (addP . (mulP >< mulP)) (addP . (p2 >< p2))) (addP . (p2 >< p2)))
+\end{code}
+
+\begin{code}
+avg_aux' = cataListN (either (split b1 q1) (split b2 q2)) where
+    b1 a = a
+    q1 a = 1
+    b2 (a,(b,c)) = (a + b * c) / (c + 1)
+    q2 (a,(b,c)) = c + 1
+
+avgLTree' = p1.cataLTree gene where
+    gene = either (split b1 b2) (split q1 q2)
+    b1 a = a
+    b2 a = 1
+    q1 ((a1,b1),(a2,b2)) = (a1 * b1 + a2 * b2) / (b1 + b2)
+    q2 ((a1,b1),(a2,b2)) = b1 + b2
 \end{code}
 
 %----------------- Fim do anexo com soluções dos alunos ------------------------%

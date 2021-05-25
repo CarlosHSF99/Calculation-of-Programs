@@ -185,17 +185,14 @@ dup = split id id
 
 zero = const 0
 
-one :: Num a => b -> a
 one  = const 1
 
 nil = const []
 
 cons = uncurry (:)
 
-add :: Num c => (c, c) -> c
 add = uncurry (+)
 
-mul :: Num c => (c, c) -> c
 mul = uncurry (*)
 
 conc = uncurry (++)
