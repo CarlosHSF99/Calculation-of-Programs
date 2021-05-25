@@ -1176,16 +1176,16 @@ g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (Un
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
     |ExpAr A|
-    ¦   ¦   \ar[d]_-{|eval_exp v|}
+            \ar[d]_-{|eval_exp v|}
 &
     |1 + (A + (BinOp >< (ExpAr A >< ExpAr A) + UnOp >< ExpAr A))|
-    ¦   ¦   \ar[d]^{|id + (id + (id >< (eval_exp v >< eval_exp v) + id >< eval_exp v))|}
-    ¦   ¦   \ar[l]_-{|inExpAr|}
+            \ar[d]^{|id + (id + (id >< (eval_exp v >< eval_exp v) + id >< eval_exp v))|}
+            \ar[l]_-{|inExpAr|}
 \\
     |A|
 &
     |1 + (A + (BinOp >< (A >< A) + UnOp >< A))|
-    ¦   ¦   \ar[l]^-{|g_eval_exp v|}
+            \ar[l]^-{|g_eval_exp v|}
 }
 \end{eqnarray*}
 
@@ -1361,22 +1361,6 @@ Desenvolvimento das expressões algébricas acima:
 \newpage
 
 \subsection*{Problema 3}
-Diagrama da calcLine, definida como um catamorfismo de listas.
-\begin{eqnarray*}
-\xymatrix@@C=2cm{
-    |NPoint|
-           \ar[d]_-{|cataList (h)|}
-           \ar[r]^-{|outList|}
-&
-    |1 + Rational + NPoint|
-           \ar[d]^{|1 + id >< (cataList (h))|}
-\\
-     |(expn ((Overtime NPoint)) (NPoint))|
-&
-     |1 + Rational + ((expn ((Overtime NPoint)) (NPoint)))|
-           \ar[l]^-{|h|}
-}
-\end{eqnarray*}
 
 \begin{code}
 calcLine :: NPoint -> (NPoint -> OverTime NPoint)
@@ -1395,7 +1379,28 @@ deCasteljau = hyloAlgForm alg coalg where
 hyloAlgForm = undefined
 \end{code}
 
+Diagrama da calcLine, definida como um catamorfismo de listas.
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    |NPoint|
+           \ar[d]_-{|cataList (h)|}
+           \ar[r]^-{|outList|}
+&
+    |1 + Rational + NPoint|
+           \ar[d]^{|1 + id >< (cataList (h))|}
+\\
+     |(expn ((Overtime NPoint)) (NPoint))|
+&
+     |1 + Rational + ((expn ((Overtime NPoint)) (NPoint)))|
+           \ar[l]^-{|h|}
+}
+\end{eqnarray*}
+
+\newpage
+
 \subsection*{Problema 4}
+
+%format (cataListN (x)) = "\llparenthesis\, " x "\,\rrparenthesis"
 
 Solução para listas não vazias:
 \begin{code}
@@ -1410,11 +1415,9 @@ cataListN g = g . recList (cataListN g) . outListN
 \end{code}
 
 \begin{code}
-avg_aux = cataListN $ either init loop where
+avg_aux = cataListN (either init loop) where
     init a          = (a, 1)
     loop (a,(b,c))  = ((a + (b * c)) / (c + 1), c + 1)
-
-avg_aux_pf = cataListN $ either (split id one) (split (uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2)) (succ . p2 . p2))
 \end{code}
 Solução para árvores de tipo \LTree:
 \begin{code}
@@ -1422,9 +1425,231 @@ avgLTree = p1.cataLTree gene where
     gene = either init loop
     init a = (a, 1)
     loop ((a1,b1),(a2,b2)) = ((a1 * b1 + a2 * b2) / (b1 + b2), (b1 + b2))
-
-avgLTree_pf = cataLTree $ either (split id one) (split (uncurry (/) . split (add . (mul >< mul)) (add . (p2 >< p2))) (add . (p2 >< p2)))
 \end{code}
+
+\newpage
+
+%format b1 = "b_1"
+%format b2 = "b_2"
+%format q1 = "q_1"
+%format q2 = "q_2"
+
+Definição do gene de avg\_aux
+
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    {A^+}
+            \ar[d]_-{|avg_aux|}
+&
+    {A + A |><| A^+}
+            \ar[d]^{|id + id >< avg_aux|}
+            \ar[l]_-{|inT|}
+\\
+    A |><| \N^+
+&
+    {A + A |><| (A |><| \N^+)}
+            \ar[l]^-{|[b,q]|}
+}
+\end{eqnarray*}
+
+\begin{eqnarray*}
+\start
+	|avg_aux = cataListN (either b q)|
+%
+\just\equiv{ |avg_aux = split avg length| }
+%
+	|split avg length = cataListN (either b q)|
+%
+\just\equiv{ Inferência dos tipos de b e q; \ Lei da troca }
+%
+	|split avg length = cataListN (split (either b1 q1) (either b2 q2))|
+%
+\just\equiv{ Lei da recursividade mútua (Fokkinga) }
+%
+    \begin{lcbr}
+        |avg . inT = either b1 q1 . fF (split avg length)|\\
+        |length . inT = either b2 q2 . fF (split avg length)|\\
+    \end{lcbr}
+%
+\just\equiv{ Def-in; \ Def-F }
+%
+    \begin{lcbr}
+        |avg . either id cons = either b1 q1 . (id + id >< (split avg length))|\\
+        |length . either id cons = either b2 q2 . (id + id >< (split avg length))|\\
+    \end{lcbr}
+%
+\just\equiv{ 2 |><| Fusão-+; \ 2 |><| Absorção-+; \ 4 |><| Natural-id }
+%
+    \begin{lcbr}
+        |either avg (avg . cons) = either b1 (q1 . (id >< (split avg length)))|\\
+        |either length (length . cons) = either b2 (q2 . (id >< (split avg length)))|\\
+    \end{lcbr}
+%
+\just\equiv{ 2 |><| Eq-+; \ f = g |==| g = f }
+%
+    \begin{lcbr}
+        \begin{lcbr}
+            |b1 = avg|\\
+            |q1 . (id >< (split avg length)) = avg . cons|\\
+        \end{lcbr}\\
+        \begin{lcbr}
+            |b2 = length|\\
+            |q2 . (id >< (split avg length)) = length . cons|\\
+        \end{lcbr}
+    \end{lcbr}
+%
+\just\equiv{ Igualdade extensional; \ Def-comp }
+%
+    \begin{lcbr}
+        \begin{lcbr}
+            |b1 a = avg a|\\
+            |q1 ((id >< (split avg length)) (a, as)) = avg (cons (a, as))|\\
+        \end{lcbr}\\
+        \begin{lcbr}
+            |b2 a = length a|\\
+            |q2 ((id >< (split avg length)) (a, as)) = length (cons (a, as))|\\
+        \end{lcbr}
+    \end{lcbr}
+%
+\just\equiv{ Def-cons; \ Def-|><|; \ Def-split; \ Natural-id }
+%
+    \begin{lcbr}
+        \begin{lcbr}
+            |b1 a = avg a|\\
+            |q1 (a, (avg as, length as)) = avg (a : as)|\\
+        \end{lcbr}\\
+        \begin{lcbr}
+            |b2 a = length a|\\
+            |q2 (a, (avg as, length as)) = length (a : as)|\\
+        \end{lcbr}
+    \end{lcbr}
+%
+\just\equiv{ Def-avg; \ Def-length }
+%
+    \begin{lcbr}
+        \begin{lcbr}
+            |b1 a = a|\\
+            |q1 (a, (avg as, length as)) = (a + avg as * length as) / (legth as + 1)|\\
+        \end{lcbr}\\
+        \begin{lcbr}
+            |b2 a = 1|\\
+            |q2 (a, (avg as, length as)) = length as + 1|\\
+        \end{lcbr}
+    \end{lcbr}
+\qed
+\end{eqnarray*}
+
+\newpage
+
+%format a1 = "a_1"
+%format a2 = "a_2"
+
+Definição do gene de avgLTree
+
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    |LTree A|
+            \ar[d]_-{|cataLTree (either b q)|}
+&
+    {A + (|LTree A|)^2}
+            \ar[d]^{|id + cataLTree (either b q)|^2}
+            \ar[l]_-{|inT|}
+\\
+    {A |><| \N^+}
+&
+    {A + (A |><| \N^+)^2}
+            \ar[l]^-{|[b,q]|}
+}
+\end{eqnarray*}
+
+\begin{eqnarray*}
+\start
+	|avgLTree = cataListN (either b q)|
+%
+\just\equiv{ |avgLTree = split avg length| }
+%
+	|split avg length = cataListN (either b q)|
+%
+\just\equiv{ Inferência dos tipos de b e q; \ Lei da troca }
+%
+	|split avg length = cataListN (split (either b1 q1) (either b2 q2))|
+%
+\just\equiv{ Lei da recursividade mútua (Fokkinga) }
+%
+    \begin{lcbr}
+        |avg . inT = either b1 q1 . fF (split avg length)|\\
+        |length . inT = either b2 q2 . fF (split avg length)|\\
+    \end{lcbr}
+%
+\just\equiv{ Def-in; \ Def-F }
+%
+    \begin{lcbr}
+        |avg . either Leaf Fork = either b1 q1 . (id + (split avg length)|^2)\\
+        |length . either Leaf Fork = either b2 q2 . (id + (split avg length)|^2)\\
+    \end{lcbr}
+%
+\just\equiv{ 2 |><| Fusão-+; \ 2 |><| Absorção-+; \ 2 |><| Natural-id }
+%
+    \begin{lcbr}
+        |either (avg . Leaf) (avg . Fork) = either b1 (q1 . (split avg length)|^2)\\
+        |either (length . Leaf) (length . Fork) = either b2 (q2 . (split avg length)|^2)\\
+    \end{lcbr}
+%
+\just\equiv{ 2 |><| Eq-+; \ f = g |==| g = f }
+%
+    \begin{lcbr}
+        \begin{lcbr}
+            |b1 = avg . Leaf|\\
+            |q1 . (split avg length)|^2| = avg . Fork|\\
+        \end{lcbr}\\
+        \begin{lcbr}
+            |b2 = length . Leaf|\\
+            |q2 . (split avg length)|^2| = length . Fork|\\
+        \end{lcbr}
+    \end{lcbr}
+%
+\just\equiv{ Igualdade extensional; \ Def-comp }
+%
+    \begin{lcbr}
+        \begin{lcbr}
+            |b1 a = avg (Leaf a)|\\
+            |q1 ((split avg length)|^2\ |((a1,a2),(b1,b2)))= avg (Fork ((a1,a2),(b1,b2)))|\\
+        \end{lcbr}\\
+        \begin{lcbr}
+            |b2 a = length (Leaf a)|\\
+            |q2 ((split avg length)|^2\ |((a1,a2),(b1,b2))) = length (Fork ((a1,a2),(b1,b2)))|\\
+        \end{lcbr}
+    \end{lcbr}
+%
+\just\equiv{ Def-Leaf; Def-Fork; \ Def-|><|; \ Def-split; \ Natural-id }
+%
+    \begin{lcbr}
+        \begin{lcbr}
+            |b1 a = avg (Leaf a)|\\
+            |q1 ((avg (a1,a2),length (a1,a2)),(avg (b1,b2),length (b1,b2))) = avg (Fork ((a1,a2),(b1,b2)))|\\
+        \end{lcbr}\\
+        \begin{lcbr}
+            |b2 a = length (Leaf a)|\\
+            |q2 ((avg (a1,a2),length (a1,a2)),(avg (b1,b2),length (b1,b2))) = length (Fork ((a1,a2),(b1,b2)))|\\
+        \end{lcbr}
+    \end{lcbr}
+%
+\just\equiv{ Def-avg; \ Def-length }
+%
+    \begin{lcbr}
+        \begin{lcbr}
+            |b1 a = a|\\
+            |q1 ((a1,a2), (b1,b2)) = (a1 * a2 + b1 * b2) / (a2 + b2)|\\
+        \end{lcbr}\\
+        \begin{lcbr}
+            |b2 a = 1|\\
+            |q2 ((a1,a2), (b1,b2)) = a2 + b2|\\
+        \end{lcbr}
+    \end{lcbr}
+\qed
+\end{eqnarray*}
+
+\newpage
 
 \subsection*{Problema 5}
 Inserir em baixo o código \Fsharp\ desenvolvido, entre \verb!\begin{verbatim}! e \verb!\end{verbatim}!:
@@ -1441,16 +1666,16 @@ Outro diagrama do catamorfismo eval\_exp mais simples (talvez fosse melhor usar 
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
     |ExpAr A|
-    ¦   ¦   \ar[d]_-{|eval_exp a|}
+            \ar[d]_-{|eval_exp a|}
 &
     |OutExpAr A|
-    ¦   ¦   \ar[d]^{|fF (eval_exp a)|}
-    ¦   ¦   \ar[l]_-{|inT|}
+            \ar[d]^{|fF (eval_exp a)|}
+            \ar[l]_-{|inT|}
 \\
     |A|
 &
     |fF A|
-    ¦   ¦   \ar[l]^-{|g_eval_exp|}
+            \ar[l]^-{|g_eval_exp|}
 }
 \end{eqnarray*}
 
@@ -1587,6 +1812,51 @@ ad_gen_pf_ab v = either (const (v, 1)) (either (split id (const 0)) (either bin 
   binop  Product  = (mul >< add . (mul >< mul)) . split (p1 >< p1) (split (p1 >< p2) (p2 >< p1))
   unop   Negate   = (negate >< negate)
   unop   E        = (expd >< mul) . split p1 (expd >< id)
+\end{code}
+
+Definição point-free de avg\_aux
+
+\begin{eqnarray*}
+\start
+    \begin{lcbr}
+        \begin{lcbr}
+            |b1 a = a|\\
+            |q1 (a, (avg as, length as)) = (a + avg as * length as) / (legth as + 1)|\\
+        \end{lcbr}\\
+        \begin{lcbr}
+            |b2 a = length a|\\
+            |q2 (a, (avg as, length as)) = length as + 1|\\
+        \end{lcbr}
+    \end{lcbr}
+%
+\just\equiv{ Def-comp; \ Igualdade extensional }
+%
+    \begin{lcbr}
+        \begin{lcbr}
+            |b1 = id|\\
+            |q1 = uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2)|\\
+        \end{lcbr}\\
+        \begin{lcbr}
+            |b2 = one|\\
+            |q2 = succ . p2 . p2|\\
+        \end{lcbr}
+    \end{lcbr}
+%
+\just\equiv{ Eq-+; \ Eq-|><| }
+%
+    |split (either b1 q1) (either b2 q2) = split (either id (uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2))) (either one (succ . p2 . p2))|
+%
+\just\equiv{ Lei da troca }
+%
+    |either (split b1 b2) (split q1 q2) = either (split id one) (split (uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2)) (succ . p2 . p2))|
+\qed
+\end{eqnarray*}
+
+\begin{code}
+avg_aux_pf = cataListN (either (split id one) (split (uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2)) (succ . p2 . p2)))
+
+avgLTree_pf = p1 . cataLTree gene where
+    gene = either (split id one) (split (uncurry (/) . split (add . (mul >< mul)) (add . (p2 >< p2))) (add . (p2 >< p2)))
 \end{code}
 
 %----------------- Fim do anexo com soluções dos alunos ------------------------%
