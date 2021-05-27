@@ -997,14 +997,20 @@ texto, disgramas e/ou outras funções auxiliares que sejam necessárias.
 Valoriza-se a escrita de \emph{pouco} código que corresponda a soluções
 simples e elegantes.
 
-\subsection*{Funções básicas dos alunos}
+\subsection*{Funções dos alunos}
 
-Redefinição polinomial de funções no capítulo 8 da biblioteca Cp, \textit{Basic functions, abbreviations}, que sofreram da \textbf{Restrição de Monomorsfismos}\footnote{Fonte: \href{https://wiki.haskell.org/Monomorphism_restriction}{HaskellWiki}.}:\\
+Redefinição polinomial de funções no capítulo 8 da biblioteca Cp, \textit{Basic functions, abbreviations}, que sofreram da \textbf{Restrição de Monomorsfismos}\footnote{Fonte: \href{https://wiki.haskell.org/Monomorphism_restriction}{HaskellWiki}.}:\\\\
+
+\setlength{\leftskip}{1cm}
+\setlength{\rightskip}{1cm}
+
+\noindent{\huge\textbf{“}}
 
 \setlength{\leftskip}{1.4cm}
 \setlength{\rightskip}{1.4cm}
 
-\noindent\textit{"The "monomorphism restriction"\ is a counter-intuitive rule in Haskell type inference. If you forget to provide a type signature, sometimes this rule will fill the free type variables with specific types using "type defaulting"\ rules. The resulting type signature is always less polymorphic than you'd expect, so often this results in the compiler throwing type errors at you in situations where you expected it to infer a perfectly sane type for a polymorphic expression."}
+\noindent\textit{The "monomorphism restriction"\ is a counter-intuitive rule in Haskell type inference. If you forget to provide a type signature, sometimes this rule will fill the free type variables with specific types using "type defaulting"\ rules. The resulting type signature is always less polymorphic than you'd expect, so often this results in the compiler throwing type errors at you in situations where you expected it to infer a perfectly sane type for a polymorphic expression.}
+\begin{flushright}{\huge\textbf{"\ \ \ \ \ \ \ }}\end{flushright}
 
 \setlength{\leftskip}{0pt}
 \setlength{\rightskip}{0pt}
@@ -1309,6 +1315,56 @@ g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (Un
 
 \newpage
 
+Devido à necessiade de saber não só as derivadas dos subtermos do produto e da exponenciação, mas também os seus valores de forma a fazer a sua derivação usámos um \textbf{Paramorfismo}\footnote{Fonte: \href{https://en.wikipedia.org/wiki/Paramorphism}{Wikipedia}.}. Algo que também é sugerido pelo \textit{wrapper} das funções, $\pi_2$.\\\\
+
+\setlength{\leftskip}{1cm}
+\setlength{\rightskip}{1cm}
+
+\noindent{\huge\textbf{“}}
+
+\setlength{\leftskip}{1.4cm}
+\setlength{\rightskip}{1.4cm}
+
+\textit{In formal methods of computer science, a paramorphism (from Greek $\pi\alpha\rho\acute{\alpha}$, meaning "close together") is an extension of the concept of catamorphism first introduced by Lambert Meertens to deal with a form which “eats its argument and keeps it too”.}
+
+\textit{It is a more convenient version of catamorphism in that it gives the combining step function immediate access not only to the result value recursively computed from each recursive subobject, but the original subobject itself as well.}
+\begin{flushright}{\huge\textbf{"\ \ \ \ \ \ \ }}\end{flushright}
+
+\setlength{\leftskip}{0pt}
+\setlength{\rightskip}{0pt}
+
+\setlength{\leftskip}{1cm}
+\setlength{\rightskip}{1cm}
+
+\noindent{\huge\textbf{“}}
+
+\setlength{\leftskip}{1.4cm}
+\setlength{\rightskip}{1.4cm}
+
+\noindent\textit{In formal methods of computer science, a paramorphism (from Greek $\pi\alpha\rho\acute{\alpha}$, meaning "close together") is an extension of the concept of catamorphism first introduced by Lambert Meertens to deal with a form which “eats its argument and keeps it too”.}
+
+\noindent\textit{It is a more convenient version of catamorphism in that it gives the combining step function immediate access not only to the result value recursively computed from each recursive subobject, but the original subobject itself as well.}
+\begin{flushright}{\huge\textbf{"\ \ \ \ \ \ \ }}\end{flushright}
+
+\setlength{\leftskip}{0pt}
+\setlength{\rightskip}{0pt}
+
+\setlength{\leftskip}{0.8cm}
+\setlength{\rightskip}{0.8cm}
+
+\noindent{\huge\textbf{“}}
+
+\setlength{\leftskip}{1.2cm}
+\setlength{\rightskip}{1.2cm}
+
+\noindent\textit{In formal methods of computer science, a paramorphism (from Greek $\pi\alpha\rho\acute{\alpha}$, meaning "close together") is an extension of the concept of catamorphism first introduced by Lambert Meertens to deal with a form which “eats its argument and keeps it too”. It is a more convenient version of catamorphism in that it gives the combining step function immediate access not only to the result value recursively computed from each recursive subobject, but the original subobject itself as well.}
+\begin{flushright}{\huge\textbf{”\ \ \ \ \ \ }}\end{flushright}
+
+\setlength{\leftskip}{0pt}
+\setlength{\rightskip}{0pt}
+
+\newpage
+
 \subsection*{Problema 2}
 
 %format def = "\mathbin{\stackrel{\mathrm{def}}{=}}"
@@ -1359,7 +1415,7 @@ Redefinindo c,
 
 \newpage
 
-\noident Desenvolvimento das expressões algébricas acima:
+\noindent Desenvolvimento das expressões algébricas acima:
 
 \begin{eqnarray*}
     c\ 0 & = & \frac {(2*0)!} {(0+1)!(0!)} = \frac {0!} {1! \times 1} = \frac {1} {1} = 1\\
@@ -1393,19 +1449,33 @@ calcLine :: NPoint -> (NPoint -> OverTime NPoint)
 calcLine = cataList h where
    h = either f g where
      f = \_ -> const . nil
+     g _      []      = nil
+     g (d,f)  (x:xs)  = \z -> concat $ (sequenceA [singl . linear1d d x, f xs]) z
+
+calcLine' :: NPoint -> (NPoint -> OverTime NPoint)
+calcLine' = cataList h where
+   h = either f g where
+     f = \_ -> const . nil
      g(d,f) l = case l of
         []     -> nil
         (x:xs) -> \z -> concat $ (sequenceA [singl . linear1d d x, f xs]) z
 
-deCasteljau :: [NPoint] -> OverTime NPoint
-deCasteljau = hyloAlgForm alg coalg where
+deCasteljau' :: [NPoint] -> OverTime NPoint
+deCasteljau' = hyloAlgForm alg coalg where
    coalg = undefined
    alg = undefined
 
 hyloAlgForm = undefined
+
+deCasteljau :: [NPoint] -> OverTime NPoint
+deCasteljau [] = nil
+deCasteljau [p] = const p
+deCasteljau l = \pt -> (calcLine (p pt) (q pt)) pt where
+  p = deCasteljau (init l)
+  q = deCasteljau (tail l)
 \end{code}
 
-\noident Diagrama da calcLine, definida como um catamorfismo de listas.
+\noindent Diagrama da calcLine, definida como um catamorfismo de listas.
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
     |NPoint|
@@ -1440,23 +1510,26 @@ Solução para listas não vazias:
 avg = p1.avg_aux
 \end{code}
 
+%format a1 = "a_1"
+%format a2 = "a_2"
+%format b1 = "b_1"
+%format b2 = "b_2"
+
 \begin{code}
 avg_aux = cataListN (either init loop) where
-    init a          = (a, 1)
-    loop (a,(b,c))  = ((a + (b * c)) / (c + 1), c + 1)
+    loop  (a,(b,c))  = ((a + b * c) / (c + 1), c + 1)
+    init  a          = (a, 1)
 \end{code}
 Solução para árvores de tipo \LTree:
 \begin{code}
 avgLTree = p1.cataLTree gene where
     gene = either init loop
-    init a = (a, 1)
-    loop ((a1,b1),(a2,b2)) = ((a1 * b1 + a2 * b2) / (b1 + b2), (b1 + b2))
+    loop  ((a1,b1),(a2,b2))  = ((a1 * b1 + a2 * b2) / (b1 + b2), b1 + b2)
+    init  a                  = (a, 1)
 \end{code}
 
 \newpage
 
-%format b1 = "b_1"
-%format b2 = "b_2"
 %format q1 = "q_1"
 %format q2 = "q_2"
 
@@ -1566,9 +1639,6 @@ avgLTree = p1.cataLTree gene where
 \end{eqnarray*}
 
 \newpage
-
-%format a1 = "a_1"
-%format a2 = "a_2"
 
 \noindent Definição do gene de avgLTree
 
