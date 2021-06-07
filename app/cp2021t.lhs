@@ -1397,12 +1397,18 @@ calcLine = cataList h where
         []     -> nil
         (x:xs) -> \z -> concat $ (sequenceA [singl . linear1d d x, f xs]) z
 
+
 deCasteljau :: [NPoint] -> OverTime NPoint
 deCasteljau = hyloAlgForm alg coalg where
-   coalg = undefined
-   alg = undefined
+   coalg [] = i1 ()
+   coalg [a] = i2 $ i1 a
+   coalg l = i2 $ i2 (init l,tail l)
+   alg = either (const . nil) (either (undefined) (uncurry calcLine))
 
-hyloAlgForm = undefined
+hyloAlgForm f g = f . rec(hyloAlgForm f g) . g 
+
+rec f = id -|- (id -|- f >< f)
+
 \end{code}
 
 \noident Diagrama da calcLine, definida como um catamorfismo de listas.
