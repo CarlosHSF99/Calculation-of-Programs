@@ -1112,6 +1112,22 @@ outExpAr :: ExpAr a -> OutExpAr a
 \end{eqnarray*}
 
 \begin{eqnarray*}
+\xymatrix@@C=2cm{
+    |ExpAr A|
+          \ar[d]_-{|cataNat g|}
+&
+    |1 + A + (BinOp >< (ExpAr >< ExpAr)) + (UnOp >< ExpAr) |
+          \ar[d]^{|id + id + (id >< (cataNat g >< cataNat g) + (id >< cataNat g)|}
+          \ar@@/_1.5pc/[l]_-{|inNat|}        
+\\
+    |A|
+&
+    |1 + A + (BinOp >< (A >< A)) + (UnOp >< A)|
+          \ar[l]^-{|g|}
+}
+\end{eqnarray*}
+
+\begin{eqnarray*}
 \start
 	|outExpAr . inExpAr = id|
 %
@@ -1448,30 +1464,23 @@ Redefinindo c,
 calcLine :: NPoint -> (NPoint -> OverTime NPoint)
 calcLine = cataList h where
    h = either f g where
-     f = \_ -> const . nil
-     g _      []      = nil
-     g (d,f)  (x:xs)  = \z -> concat $ (sequenceA [singl . linear1d d x, f xs]) z
-
-calcLine' :: NPoint -> (NPoint -> OverTime NPoint)
-calcLine' = cataList h where
-   h = either f g where
-     f = \_ -> const . nil
-     g(d,f) l = case l of
-        []     -> nil
-        (x:xs) -> \z -> concat $ (sequenceA [singl . linear1d d x, f xs]) z
-
+     f = const . const . nil
+     g _     []     = nil
+     g (d,f) (x:xs) = \z -> concat $ (sequenceA [singl . linear1d d x, f xs]) z
 
 deCasteljau :: [NPoint] -> OverTime NPoint
-deCasteljau = hyloAlgForm alg coalg where
-   coalg [] = i1 ()
-   coalg [a] = i2 $ i1 a
-   coalg l = i2 $ i2 (init l,tail l)
-   alg = either (const . nil) (either (undefined) (uncurry calcLine))
+deCasteljau = hyloBezier conquer divide where
+    divide  = (id -|- (id -|- split init tail)) . outBezier
+    conquer = either (const . nil) (either const f)
+    f (a,b) = \pt -> (calcLine (a pt) (b pt)) pt
+    
+outBezier []  = i1 ()
+outBezier [a] = i2 $ i1 a
+outBezier l   = i2 $ i2 l
 
-hyloAlgForm f g = f . rec(hyloAlgForm f g) . g 
+hyloBezier f g = f . rec(hyloBezier f g) . g 
 
 rec f = id -|- (id -|- f >< f)
-
 \end{code}
 
 \noindent Diagrama da calcLine, definida como um catamorfismo de listas.
