@@ -1061,16 +1061,16 @@ outExpAr (Un op a)     = i2 $ i2 $ i2 (op, a)
 ---
 recExpAr f = baseExpAr id id id f f id f
 ---
-g_eval_exp v = either (const v) (either id (either bin un)) where
-    bin             = ap . (binop  >< id)
-    un              = ap . (unop   >< id)
-    binop  Sum      = addP
-    binop  Product  = mulP
-    unop   Negate   = negate
-    unop   E        = expd
+g_eval_exp_pw v = either g1 (either g2 (either g3 g4)) where
+    g1 ()                 = v
+    g2 a                  = a
+    g3 (Sum,     (a, b))  = a + b
+    g3 (Product, (a, b))  = a * b
+    g4 (Negate, a)        = negate a
+    g4 (E,      a)        = expd a
 ---
-clean (Bin Product (N 0) b)  = i2 $ i1 0
-clean (Bin Product a (N 0))  = i2 $ i1 0
+clean (Bin Product (N 0) _)  = i2 $ i1 0
+clean (Bin Product _ (N 0))  = i2 $ i1 0
 clean (Un E (N 0))           = i2 $ i1 1
 clean a = outExpAr a
 ---
@@ -1104,26 +1104,10 @@ ad_gen v = either (const (v, 1)) (either (split id (const 0)) (either bin un)) w
 outExpAr :: ExpAr a -> OutExpAr a
 \end{code}
 %outExpAr :: ExpAr a -> Either () (Either a (Either (BinOp, (ExpAr a, ExpAr a)) (UnOp, ExpAr a)))
-\begin{eqnarray*}
-\xymatrix@@C=2cm{
-  |ExpAr A| \ar@@/^2pc/[rr]^-{|outExpAr|} & {\cong} & |OutExpAr A| \ar@@/^2pc/[ll]^-{|inExpAr|}
-%  |ExpAr A| \ar@@/^2pc/[rr]^-{|outExpAr|} & {\cong} & {1 + (A + (BinOp \times (ExpAr A)^2 + UnOp \times ExpAr A))} \ar@@/^2pc/[ll]^-{|inExpAr|}
-}
-\end{eqnarray*}
 
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
-    |ExpAr A|
-          \ar[d]_-{|cataNat g|}
-&
-    |1 + A + (BinOp >< (ExpAr >< ExpAr)) + (UnOp >< ExpAr) |
-          \ar[d]^{|id + id + (id >< (cataNat g >< cataNat g) + (id >< cataNat g)|}
-          \ar@@/_1.5pc/[l]_-{|inNat|}        
-\\
-    |A|
-&
-    |1 + A + (BinOp >< (A >< A)) + (UnOp >< A)|
-          \ar[l]^-{|g|}
+  |ExpAr A| \ar@@/^2pc/[rr]^-{|outExpAr|} & {\cong} & |OutExpAr A| \ar@@/^2pc/[ll]^-{|inExpAr|}
 }
 \end{eqnarray*}
 
@@ -1258,15 +1242,15 @@ g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (Un
 %
     |either ((ev v) . (const X)) (either ((ev v) . N) (either ((ev v) . bin) ((ev v) . (uncurry Un)))) = either g1 (either g2 (either (g3 . (id >< (ev v >< ev v))) (g4 . (id >< ev a))))|
 %
-\just\equiv{ 3 |><| Eq-+ }
+\just\equiv{ 3 |><| Eq-+; \ f = g $\equiv$ g = f }
 %
 \begin{lcbr}
-  |(ev v) . (const X) = g1|\\
+  |g1 = (ev v) . (const X)|\\
   \begin{lcbr}
-    |(ev v) . N = g2|\\
+    |g2 = (ev v) . N|\\
     \begin{lcbr}
-      |(ev v) . bin = g3 . (id >< (ev v >< ev v))|\\
-      |(ev v) . (uncurry Un) = g4 . (id >< ev v)|
+      |g3 . (id >< (ev v >< ev v)) = (ev v) . bin|\\
+      |g4 . (id >< ev v) = (ev v) . (uncurry Un)|
     \end{lcbr}
   \end{lcbr}
 \end{lcbr}
@@ -1274,12 +1258,12 @@ g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (Un
 \just\equiv{ Igualdade extensional; \ Def-comp }
 %
 \begin{lcbr}
-  |ev v ((const X) ()) = g1 ()|\\
+  |g1 () = ev v ((const X) ())|\\
   \begin{lcbr}
-    |ev v (N a) = g2 a|\\
+    |g2 a = ev v (N a)|\\
     \begin{lcbr}
-      |ev v (bin (binop, (a, b))) = g3 ((id >< (ev v >< ev v)) (binop, (a, b)))|\\
-      |ev v ((uncurry Un) (unop, a)) = g4 ((id >< ev v) (unop, a))|
+      |g3 ((id >< (ev v >< ev v)) (binop, (a, b))) = ev v (bin (binop, (a, b)))|\\
+      |g4 ((id >< ev v) (unop, a)) = ev v ((uncurry Un) (unop, a))|
     \end{lcbr}
   \end{lcbr}
 \end{lcbr}
@@ -1287,12 +1271,12 @@ g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (Un
 \just\equiv{ Def-const; \ Def-N; \ Def-bin; \ Def-|uncurry Un|; \ Def-|><| }
 %
 \begin{lcbr}
-  |ev v X = g1 ()|\\
+  |g1 () = ev v X|\\
   \begin{lcbr}
-    |ev v (N a) = g2 a|\\
+    |g2 a = ev v (N a)|\\
     \begin{lcbr}
-      |ev v (Bin binop a b) = g3 (binop, (ev v a, ev v b))|\\
-      |ev v (Un unop a) = g4 (unop, ev v a)|
+      |g3 (binop, (ev v a, ev v b)) = ev v (Bin binop a b)|\\
+      |g4 (unop, ev v a) = ev v (Un unop a)|
     \end{lcbr}
   \end{lcbr}
 \end{lcbr}
@@ -1300,29 +1284,37 @@ g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (Un
 \just\equiv{ Pattern matching em binop e unop }
 %
 \begin{lcbr}
-  |ev v X = g1 ()|\\
+  |g1 () = ev v X|\\
   \begin{lcbr}
-    |ev v (N a) = g2 a|\\
+    |g2 a = ev v (N a)|\\
     \begin{lcbr}
-      |ev v (Bin Sum a b) = g3 (Sum, (ev v a, ev v b))|\\
-      |ev v (Bin Product a b) = g3 (Product, (ev v a, ev v b))|\\
-      |ev v (Un Negate a) = g4 (Negate, ev v a)|\\
-      |ev v (Un E a) = g4 (E, ev v a)|
+      \begin{lcbr}
+        |g3 (Sum, (ev v a, ev v b)) = ev v (Bin Sum a b)|\\
+        |g3 (Product, (ev v a, ev v b)) = ev v (Bin Product a b)|\\
+      \end{lcbr}\\
+      \begin{lcbr}
+        |g4 (Negate, ev v a) = ev v (Un Negate a)|\\
+        |g4 (E, ev v a) = ev v (Un E a)|
+      \end{lcbr}
     \end{lcbr}
   \end{lcbr}
 \end{lcbr}
 %
-\just\equiv{ Def-ev; \ f = g $\equiv$ g = f }
+\just\equiv{ Def-ev }
 %
 \begin{lcbr}
   |g1 () = v|\\
   \begin{lcbr}
-    |g2 a = N a|\\
+    |g2 a = a|\\
     \begin{lcbr}
-      |g3 (Sum, (v1, v2)) = v1 + v2|\\
-      |g3 (Product, (v1, v2)) = v1 * v2|\\
-      |g4 (Negate, v1) = negate v1|\\
-      |g4 (E, v1) = expd v1|
+      \begin{lcbr}
+        |g3 (Sum, (v1, v2)) = v1 + v2|\\
+        |g3 (Product, (v1, v2)) = v1 * v2|\\
+      \end{lcbr}\\
+      \begin{lcbr}
+        |g4 (Negate, v1) = negate v1|\\
+        |g4 (E, v1) = expd v1|
+      \end{lcbr}
     \end{lcbr}
   \end{lcbr}
 \end{lcbr}
@@ -1345,36 +1337,6 @@ Devido à necessiade de saber não só as derivadas dos subtermos do produto e d
 
 \textit{It is a more convenient version of catamorphism in that it gives the combining step function immediate access not only to the result value recursively computed from each recursive subobject, but the original subobject itself as well.}
 \begin{flushright}{\huge\textbf{"\ \ \ \ \ \ \ }}\end{flushright}
-
-\setlength{\leftskip}{0pt}
-\setlength{\rightskip}{0pt}
-
-\setlength{\leftskip}{1cm}
-\setlength{\rightskip}{1cm}
-
-\noindent{\huge\textbf{“}}
-
-\setlength{\leftskip}{1.4cm}
-\setlength{\rightskip}{1.4cm}
-
-\noindent\textit{In formal methods of computer science, a paramorphism (from Greek $\pi\alpha\rho\acute{\alpha}$, meaning "close together") is an extension of the concept of catamorphism first introduced by Lambert Meertens to deal with a form which “eats its argument and keeps it too”.}
-
-\noindent\textit{It is a more convenient version of catamorphism in that it gives the combining step function immediate access not only to the result value recursively computed from each recursive subobject, but the original subobject itself as well.}
-\begin{flushright}{\huge\textbf{"\ \ \ \ \ \ \ }}\end{flushright}
-
-\setlength{\leftskip}{0pt}
-\setlength{\rightskip}{0pt}
-
-\setlength{\leftskip}{0.8cm}
-\setlength{\rightskip}{0.8cm}
-
-\noindent{\huge\textbf{“}}
-
-\setlength{\leftskip}{1.2cm}
-\setlength{\rightskip}{1.2cm}
-
-\noindent\textit{In formal methods of computer science, a paramorphism (from Greek $\pi\alpha\rho\acute{\alpha}$, meaning "close together") is an extension of the concept of catamorphism first introduced by Lambert Meertens to deal with a form which “eats its argument and keeps it too”. It is a more convenient version of catamorphism in that it gives the combining step function immediate access not only to the result value recursively computed from each recursive subobject, but the original subobject itself as well.}
-\begin{flushright}{\huge\textbf{”\ \ \ \ \ \ }}\end{flushright}
 
 \setlength{\leftskip}{0pt}
 \setlength{\rightskip}{0pt}
@@ -1434,7 +1396,7 @@ Redefinindo c,
 \noindent Desenvolvimento das expressões algébricas acima:
 
 \begin{eqnarray*}
-    c\ 0 & = & \frac {(2*0)!} {(0+1)!(0!)} = \frac {0!} {1! \times 1} = \frac {1} {1} = 1\\
+    c\ 0 & = & \frac {(2*0)!} {(0+1)!(0!)} = \frac {0!} {1! * 1} = \frac {1} {1} = 1\\
 \\
     c\ (n+1) & = & \frac {(2(n+1))!} {((n+1)+1)!((n+1)!)}\\
              & = & \frac {(2n+2)!} {(n+2)!(n+1)!}\\
@@ -1442,7 +1404,7 @@ Redefinindo c,
              & = & \frac {(2n+2)(2n+1)} {(n+2)(n+1)} \cdot \frac {(2n)!} {(n+1)!n!}\\
              & = & \frac {4n+2} {n+2} (c\ n)\\
 \\
-    t\ 0 & = & 4 \times 0 + 2 = 0 + 2 = 2\\
+    t\ 0 & = & 4 * 0 + 2 = 0 + 2 = 2\\
 \\
     t\ (n + 1) & = & 4(n + 1) + 2\\
                & = & 4n + 4 + 2\\
@@ -1463,59 +1425,107 @@ Redefinindo c,
 \begin{code}
 calcLine :: NPoint -> (NPoint -> OverTime NPoint)
 calcLine = cataList h where
-   h = either f g where
-     f = const . const . nil
-     g _     []     = nil
-     g (d,f) (x:xs) = \z -> concat $ (sequenceA [singl . linear1d d x, f xs]) z
-
+    h = either f g
+    f = const $ const nil
+    g (d,f) l = case l of
+        []     -> nil
+        (x:xs) -> \z -> concat $ (sequenceA [singl . linear1d d x, f xs]) z
+\end{code}
+\begin{code}
 deCasteljau :: [NPoint] -> OverTime NPoint
 deCasteljau = hyloBezier conquer divide where
-    divide  = (id -|- (id -|- split init tail)) . outBezier
-    conquer = either (const . nil) (either const f)
-    f (a,b) = \pt -> (calcLine (a pt) (b pt)) pt
-    
-outBezier []  = i1 ()
-outBezier [a] = i2 $ i1 a
-outBezier l   = i2 $ i2 l
-
+    divide   = outBezier
+    conquer  = either (const . nil) (either const f)
+    f (a,b)  = \pt -> (calcLine (a pt) (b pt)) pt
+\end{code}
+\begin{code}
+outBezier []   = i1 ()
+outBezier [a]  = i2 $ i1 a
+outBezier l    = i2 $ i2 (init l, tail l)
+---
 hyloBezier f g = f . rec(hyloBezier f g) . g 
-
+---
 rec f = id -|- (id -|- f >< f)
 \end{code}
+
+\newpage
+
+%format (cataList (x)) = "\llparenthesis\, " x "\,\rrparenthesis"
 
 \noindent Diagrama da calcLine, definida como um catamorfismo de listas.
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
     |NPoint|
-           \ar[d]_-{|cataList (h)|}
+           \ar[d]_-{|cataList h|}
            \ar[r]^-{|outList|}
 &
     |1 + Rational + NPoint|
            \ar[d]^{|1 + id >< (cataList (h))|}
 \\
-     |(expn ((Overtime NPoint)) (NPoint))|
+     |expn (Overtime NPoint) NPoint|
 &
-     |1 + Rational + ((expn ((Overtime NPoint)) (NPoint)))|
+     |1 + Rational + expn (Overtime NPoint) NPoint|
            \ar[l]^-{|h|}
 }
+\end{eqnarray*}
+
+\begin{eqnarray*}
+\start
+    \begin{lcbr}
+        |calcLine [] = const nil|\\
+        |calcLine (p:x) = curry g p (calcLine x)|\\
+    \end{lcbr}
+%
+\just\equiv{ Def-comp }
+%
+    \begin{lcbr}
+        |calcLine . nil a = |const| . |const| . nil a|\\
+        |calcLine . cons (p,x) = g . (id >< calcLine) (p,x)|\\
+    \end{lcbr}
+%
+\just\equiv{ Igualdade extensional }
+%
+    \begin{lcbr}
+        |calcLine . nil = |const| . |const| . nil|\\
+        |calcLine . cons = g . (id >< calcLine)|\\
+    \end{lcbr}
+%
+\just\equiv{ Eq-+ }
+%
+    |either (calcLine . nil) (calcLine . cons) = either (|const| . |const| . nil) (g . (id >< calcLine))|\\
+%
+\just\equiv{ Fusão-+; \ Absorção-+; \ Natural-id }
+%
+    |calcLine . either nil cons = either (|const| . |const| . nil) g . (id -|- id >< calcLine))|\\
+\qed
 \end{eqnarray*}
 
 \newpage
 
 \subsection*{Problema 4}
 
-%format (cataListN (x)) = "\llparenthesis\, " x "\,\rrparenthesis"
+%format (inNList) = "\mathsf{in_{NList}}"
+%format (outNList) = "\mathsf{out_{NList}}"
+%format (cataNList (x)) = "\llparenthesis\, " x "\,\rrparenthesis"
 
 Definições de funções para catamorfismos sobre listas não vazias:
 \begin{code}
-outListN [a]     = i1 a
-outListN (a:as)  = i2 (a,as)
-
-cataListN g = g . recList (cataListN g) . outListN
+inNList :: Either a (a, [a]) -> [a]
+inNList = either singl cons
+---
+outNList :: [a] -> Either a (a, [a])
+outNList [a]     = i1 a
+outNList (a:as)  = i2 (a,as)
+---
+cataNList :: (Either a (a, b) -> b) -> [a] -> b
+cataNList g = g . recNList (cataNList g) . outNList
+---
+recNList :: (a -> b) -> Either x (y, a) -> Either x (y, b)
+recNList f = id -|- id >< f
 \end{code}
 Solução para listas não vazias:
 \begin{code}
-avg = p1.avg_aux
+avg = p1 . avg_aux
 \end{code}
 
 %format a1 = "a_1"
@@ -1524,7 +1534,7 @@ avg = p1.avg_aux
 %format b2 = "b_2"
 
 \begin{code}
-avg_aux = cataListN (either init loop) where
+avg_aux = cataNList (either init loop) where
     loop  (a,(b,c))  = ((a + b * c) / (c + 1), c + 1)
     init  a          = (a, 1)
 \end{code}
@@ -1535,6 +1545,49 @@ avgLTree = p1.cataLTree gene where
     loop  ((a1,b1),(a2,b2))  = ((a1 * b1 + a2 * b2) / (b1 + b2), b1 + b2)
     init  a                  = (a, 1)
 \end{code}
+
+\newpage
+
+\begin{eqnarray*}
+\xymatrix@@C=1.5cm{
+  |A + A >< A|^+ \ar@@/^2pc/[rr]^-{|outNList|} & {\cong\ \ \ \ \ \ \ } & |A|^+ \ar@@/^2pc/[ll]^-{|inNList|}
+}
+\end{eqnarray*}
+
+\begin{eqnarray*}
+\start
+    |outNList . inNList = id|
+%
+\just\equiv{ Def-|inNList| }
+%
+    |outNList . either singl cons = id|
+%
+\just\equiv{ Fusão-+ }
+%
+    |either (outNList . singl) (outNList . cons) = id|
+%
+\just\equiv{ Universal-+; \ Natural-id }
+%
+    \begin{lcbr}
+        |outNList . singl = i1|\\
+        |outNList . cons = i2|\\
+    \end{lcbr}
+%
+\just\equiv{ Igualdade extensional; \ Def-comp }
+%
+    \begin{lcbr}
+        |outNList (singl a) = i1 a|\\
+        |outNList (cons (a, as)) = i2 (a, as)|\\
+    \end{lcbr}
+%
+\just\equiv{ Def-singl; \ Def-cons }
+%
+    \begin{lcbr}
+        |outNList [a] = i1 a|\\
+        |outNList (a : as) = i2 (a, as)|\\
+    \end{lcbr}
+\qed
+\end{eqnarray*}
 
 \newpage
 
@@ -1550,7 +1603,7 @@ avgLTree = p1.cataLTree gene where
 &
     {A + A |><| A^+}
             \ar[d]^{|id + id >< avg_aux|}
-            \ar[l]_-{|inT|}
+            \ar[l]_-{|inNList|}
 \\
     A |><| \N^+
 &
@@ -1561,46 +1614,46 @@ avgLTree = p1.cataLTree gene where
 
 \begin{eqnarray*}
 \start
-	|avg_aux = cataListN (either b q)|
+	|avg_aux = cataNList (either b q)|
 %
 \just\equiv{ |avg_aux = split avg length| }
 %
-	|split avg length = cataListN (either b q)|
+	|split avg length = cataNList (either b q)|
 %
 \just\equiv{ Inferência dos tipos de b e q; \ Lei da troca }
 %
-	|split avg length = cataListN (split (either b1 q1) (either b2 q2))|
+	|split avg length = cataNList (split (either b1 q1) (either b2 q2))|
 %
 \just\equiv{ Lei da recursividade mútua (Fokkinga) }
 %
     \begin{lcbr}
-        |avg . inT = either b1 q1 . fF (split avg length)|\\
-        |length . inT = either b2 q2 . fF (split avg length)|\\
+        |avg . inNList = either b1 q1 . fF (split avg length)|\\
+        |length . inNList = either b2 q2 . fF (split avg length)|\\
     \end{lcbr}
 %
-\just\equiv{ Def-in; \ Def-F }
+\just\equiv{ Def-inNList; \ Def-F }
 %
     \begin{lcbr}
-        |avg . either id cons = either b1 q1 . (id + id >< (split avg length))|\\
-        |length . either id cons = either b2 q2 . (id + id >< (split avg length))|\\
+        |avg . either singl cons = either b1 q1 . (id + id >< (split avg length))|\\
+        |length . either singl cons = either b2 q2 . (id + id >< (split avg length))|\\
     \end{lcbr}
 %
-\just\equiv{ 2 |><| Fusão-+; \ 2 |><| Absorção-+; \ 4 |><| Natural-id }
+\just\equiv{ 2 |><| Fusão-+; \ 2 |><| Absorção-+; \ 2 |><| Natural-id }
 %
     \begin{lcbr}
-        |either avg (avg . cons) = either b1 (q1 . (id >< (split avg length)))|\\
-        |either length (length . cons) = either b2 (q2 . (id >< (split avg length)))|\\
+        |either (avg . singl) (avg . cons) = either b1 (q1 . (id >< (split avg length)))|\\
+        |either (length . singl) (length . cons) = either b2 (q2 . (id >< (split avg length)))|\\
     \end{lcbr}
 %
 \just\equiv{ 2 |><| Eq-+; \ f = g |==| g = f }
 %
     \begin{lcbr}
         \begin{lcbr}
-            |b1 = avg|\\
+            |b1 = avg . singl|\\
             |q1 . (id >< (split avg length)) = avg . cons|\\
         \end{lcbr}\\
         \begin{lcbr}
-            |b2 = length|\\
+            |b2 = length . singl|\\
             |q2 . (id >< (split avg length)) = length . cons|\\
         \end{lcbr}
     \end{lcbr}
@@ -1609,24 +1662,24 @@ avgLTree = p1.cataLTree gene where
 %
     \begin{lcbr}
         \begin{lcbr}
-            |b1 a = avg a|\\
+            |b1 a = avg (singl a)|\\
             |q1 ((id >< (split avg length)) (a, as)) = avg (cons (a, as))|\\
         \end{lcbr}\\
         \begin{lcbr}
-            |b2 a = length a|\\
+            |b2 a = length (singl a)|\\
             |q2 ((id >< (split avg length)) (a, as)) = length (cons (a, as))|\\
         \end{lcbr}
     \end{lcbr}
 %
-\just\equiv{ Def-cons; \ Def-|><|; \ Def-split; \ Natural-id }
+\just\equiv{ Def-cons; \ Def-|><|; \ Def-split; \ Def-singl; \ Natural-id }
 %
     \begin{lcbr}
         \begin{lcbr}
-            |b1 a = avg a|\\
+            |b1 a = avg [a]|\\
             |q1 (a, (avg as, length as)) = avg (a : as)|\\
         \end{lcbr}\\
         \begin{lcbr}
-            |b2 a = length a|\\
+            |b2 a = length [a]|\\
             |q2 (a, (avg as, length as)) = length (a : as)|\\
         \end{lcbr}
     \end{lcbr}
@@ -1642,6 +1695,47 @@ avgLTree = p1.cataLTree gene where
             |b2 a = 1|\\
             |q2 (a, (avg as, length as)) = length as + 1|\\
         \end{lcbr}
+    \end{lcbr}
+%
+\just\equiv{ Def-comp; \ Igualdade extensional }
+%
+    \begin{lcbr}
+        \begin{lcbr}
+            |b1 = id|\\
+            |q1 = uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2)|\\
+        \end{lcbr}\\
+        \begin{lcbr}
+            |b2 = one|\\
+            |q2 = succ . p2 . p2|\\
+        \end{lcbr}
+    \end{lcbr}
+%
+\just\equiv{ Eq-+; \ Eq-|><|; \ Lei da troca; \ Eq-+ }
+%
+    \begin{lcbr}
+        |split b1 b2 = split id one|\\
+        |split q1 q2 = split (uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2)) (succ . p2 . p2)|\\
+    \end{lcbr}
+%
+\just\equiv{ |split b1 b2| := |init|; \ |split q1 q2| := |loop|; \ Igualdade extensional }
+%
+    \begin{lcbr}
+        |init a = split id one a|\\
+        |loop (a,(len_as,avg_as)) = split (uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2)) (succ . p2 . p2) (a,(len_as,avg_as))|\\
+    \end{lcbr}
+%
+\just\equiv{ Def-split }
+%
+    \begin{lcbr}
+        |init a = (id a, one a)|\\
+        |loop (a,(b,c)) = ((uncurry (/) ((add ((id >< mul) (a,(b,c)))), (succ (p2 (p2 (a,(b,c))))))), (succ (p2 (p2 (a,(b,c))))))|\\
+    \end{lcbr}
+%
+\just\equiv{ Natural-id; \ Def-one; \ Def-|><|; \ Def-|p2|; \ Def-succ; \ Def-mul; \ Def-add  }
+%
+    \begin{lcbr}
+        |init a = (a, 1)|\\
+        |loop (a,(b,c)) = (a + b * c) / (c + 1), c + 1)|\\
     \end{lcbr}
 \qed
 \end{eqnarray*}
@@ -1835,8 +1929,8 @@ Outro diagrama do catamorfismo eval\_exp mais simples (talvez fosse melhor usar 
   \begin{lcbr}
     |g2 = N|\\
     \begin{lcbr}
-      |g3 = add · p2|\\
-      |g3 = mul · p2|\\
+      |g3 = add . p2|\\
+      |g3 = mul . p2|\\
       |g4 = negate . p2|\\
       |g4 = expd . p2|
     \end{lcbr}
@@ -1845,15 +1939,17 @@ Outro diagrama do catamorfismo eval\_exp mais simples (talvez fosse melhor usar 
 \qed
 \end{eqnarray*}
 
+%format (cond a b c) = "{" a "} \rightarrow {" b "}, {" c "}"
+
 \begin{code}
--- Point wise definition
-g_eval_exp_pw v = either g1 (either g2 (either g3 g4)) where
-    g1 ()                 = v
-    g2 a                  = a
-    g3 (Sum,     (a, b))  = a + b
-    g3 (Product, (a, b))  = a * b
-    g4 (Negate, a)        = negate a
-    g4 (E,      a)        = expd a
+-- Point free definition
+g_eval_exp v = either (const v) (either id (either bin un)) where
+    bin             = ap . (binop  >< id)
+    un              = ap . (unop   >< id)
+    binop  Sum      = addP
+    binop  Product  = mulP
+    unop   Negate   = negate
+    unop   E        = expd
 --
 -- Point wise with conditionals
 g_eval_exp_cpw v = either g1 (either g2 (either g3 g4)) where
@@ -1957,14 +2053,14 @@ ad_gen_pf_ab v = either (const (v, 1)) (either (split id (const 0)) (either bin 
 \end{eqnarray*}
 
 \begin{code}
-avg_aux_pf = cataListN (either (split id oneP) (split (uncurry (/) . split (addP . (id >< mulP)) (succ . p2 . p2)) (succ . p2 . p2)))
+avg_aux_pf = cataNList (either (split id oneP) (split (uncurry (/) . split (addP . (id >< mulP)) (succ . p2 . p2)) (succ . p2 . p2)))
 
 avgLTree_pf = p1 . cataLTree gene where
     gene = either (split id oneP) (split (uncurry (/) . split (addP . (mulP >< mulP)) (addP . (p2 >< p2))) (addP . (p2 >< p2)))
 \end{code}
 
 \begin{code}
-avg_aux' = cataListN (either (split b1 q1) (split b2 q2)) where
+avg_aux'' = cataNList (either (split b1 q1) (split b2 q2)) where
     b1 a = a
     q1 a = 1
     b2 (a,(b,c)) = (a + b * c) / (c + 1)
