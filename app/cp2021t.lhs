@@ -1210,13 +1210,13 @@ g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (Un
     |ExpAr A|
             \ar[d]_-{|eval_exp v|}
 &
-    |1 + (A + (BinOp >< (ExpAr A >< ExpAr A) + UnOp >< ExpAr A))|
+    |1 + (A + (BinOp >< (ExpAr A)|^2| + UnOp >< ExpAr A))|
             \ar[d]^{|id + (id + (id >< (eval_exp v >< eval_exp v) + id >< eval_exp v))|}
             \ar[l]_-{|inExpAr|}
 \\
     |A|
 &
-    |1 + (A + (BinOp >< (A >< A) + UnOp >< A))|
+    |1 + (A + (BinOp >< A|^2| + UnOp >< A))|
             \ar[l]^-{|g_eval_exp v|}
 }
 \end{eqnarray*}
@@ -1335,7 +1335,7 @@ Propriedade Expoente Zero:
 \begin{eqnarray*}
     e ^ 0 & = & 1
 \end{eqnarray*}
-
+\\\\
 \noindent\textbf{Provas das definições de sd\_gen e ad\_gen\\}
 
 Devido à necessiade de conhecer não só as derivadas dos subtermos do produto e da exponenciação, mas também os seus valores de forma a fazer a sua derivação usámos um \textbf{Paramorfismo}\footnote{Fonte: \href{https://en.wikipedia.org/wiki/Paramorphism}{Wikipedia}.}. Algo que também é sugerido pelo \textit{wrapper} das funções, $\pi_2$.\\\\
@@ -1356,7 +1356,41 @@ Devido à necessiade de conhecer não só as derivadas dos subtermos do produto 
 \setlength{\leftskip}{0pt}
 \setlength{\rightskip}{0pt}
 
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    |ExpAr A|
+            \ar[d]_-{|split id sd|}
+&
+    |1 + (A + (BinOp >< (ExpAr A)|^2| + UnOp >< ExpAr A))|
+            \ar[d]^{|id + (id + (id >< (split id sd >< split id sd) + id >< split id sd))|}
+            \ar[l]_-{|inExpAr|}
+\\
+    |(ExpAr A)|^2
+&
+    |1 + (A + (BinOp >< ((ExpAr A)|^2| >< (ExpAr A)|^2|) + UnOp >< (ExpAr A)|^2|))|
+            \ar[l]^-{|sd_gen|}
+}
+\end{eqnarray*}
+\\
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    |ExpAr A|
+            \ar[d]_-{|split id (ad v)|}
+&
+    |1 + (A + (BinOp >< (ExpAr A)|^2| + UnOp >< ExpAr A))|
+            \ar[d]^{|id + (id + (id >< (split id (ad v) >< split id (ad v)) + id >< split id (ad v)))|}
+            \ar[l]_-{|inExpAr|}
+\\
+    {\R}
+&
+    |1 + (B + (BinOp >< (|\R| >< |\R|) + UnOp >< |\R|))|
+            \ar[l]^-{|ad_gen v|}
+}
+\end{eqnarray*}
+
 \newpage
+
+\noindent Prova da definição de sd\_gen
 
 \begin{eqnarray*}
 \start
@@ -1364,7 +1398,7 @@ Devido à necessiade de conhecer não só as derivadas dos subtermos do produto 
 %
 \just\equiv{ Def-inExpAr; \ Def-|fF| }
 %
-	|split id sd . either (const X) (either N (either bin (uncurry Un))) = g . (id + (id + (id >< split id sd|^2|) + id >< split id sd)))|
+	|split id sd . either (const X) (either N (either bin (uncurry Un))) = sd_gen . (id + (id + (id >< split id sd|^2|) + id >< split id sd)))|
 %
 \just\equiv{ Inferência do tipo de g }
 %
@@ -1467,6 +1501,8 @@ Devido à necessiade de conhecer não só as derivadas dos subtermos do produto 
 \end{eqnarray*}
 
 \newpage
+
+\noindent Prova da definição de ad\_gen
 
 \begin{eqnarray*}
 \start
@@ -1659,9 +1695,7 @@ Redefinindo c,
 
 %format (inBezier) = "\mathsf{in}_{Bezier}"
 %format (outBezier) = "\mathsf{out}_{Bezier}"
-%%format (cataBezier (x)) = "\llparenthesis\, " x "\,\rrparenthesis"
-%%format (anaBezier (x)) = "\lpbaren\, " x "\,\rpbaren"
-%%format (hyloBezier (c) (a)) = "\llbracket\, " c, a "\,\rrbracket"
+%format (hyloBezier (c) (a)) = "\llbracket\, " c, a "\,\rrbracket_{Bezier}"
 %format (recBezier) = "\mathsf{F}_{Bezier}"
 %format (baseBezier) = "\mathsf{B}_{Bezier}"
 
@@ -1677,18 +1711,14 @@ calcLine = cataList h where
 \begin{code}
 deCasteljau :: [NPoint] -> OverTime NPoint
 deCasteljau = hyloBezier conquer divide where
-    divide   = outBezier
+    divide   = (id -|- (id -|- split init tail)) . outBezier
     conquer  = either (const nil) (either const f)
     f (a,b)  = \pt -> (calcLine (a pt) (b pt)) pt
 \end{code}
 \begin{code}
 outBezier []   = i1 ()
 outBezier [a]  = i2 $ i1 a
-outBezier l    = i2 $ i2 (init l, tail l)
----
-cataBezier g = undefined
----
-anaBezier g = undefined
+outBezier l    = i2 $ i2 l
 ---
 hyloBezier f g = f . recBezier (hyloBezier f g) . g 
 ---
@@ -1709,9 +1739,9 @@ recBezier f = id -|- (id -|- f >< f)
     |1 + Rational + NPoint|
            \ar[d]^{|1 + id >< (cataList (h))|}
 \\
-     |expn (Overtime NPoint) NPoint|
+    |expn (Overtime NPoint) NPoint|
 &
-     |1 + Rational + expn (Overtime NPoint) NPoint|
+    |1 + Rational + expn (Overtime NPoint) NPoint|
            \ar[l]^-{|h|}
 }
 \end{eqnarray*}
@@ -1757,31 +1787,54 @@ recBezier f = id -|- (id -|- f >< f)
 
 \newpage
 
+\begin{eqnarray*}
+\start
+    \begin{lcbr}
+        |deCasteljau [] = nil|\\
+        |deCasteljau [p] = const p|\\
+        |deCasteljau l = \pt -> (calcLine (p pt) (q pt)) pt|\\
+    \end{lcbr}
+%
+\just\equiv{ p = deCasteljau (init l); \ q = deCasteljau (tail l) }
+%
+    \begin{lcbr}
+        |deCasteljau [] = nil|\\
+        |deCasteljau [p] = const p|\\
+        |deCasteljau l = \pt -> (calcLine (deCasteljau (init l) pt) (deCasteljau (tail l) pt)) pt|\\
+    \end{lcbr}
+%
+\just\equiv{ Igualdade extensional; Def-comp }
+%
+    \begin{lcbr}
+        |deCasteljau . nil = const nil|\\
+        |deCasteljau . singl =| const\\
+        |deCasteljau = uncurry calcLine . deCasteljau|^2| . split init tail|\\
+        %|deCasteljau = \pt -> (uncurry calcLine . deCasteljau|^2| . split init tail) pt|\\
+    \end{lcbr}
+%
+\just\equiv{ 2 |><| Eq-+; \ 2 |><| Fusão-+; \ 2 |><| Absorção-+ }
+%
+    |deCasteljau . either nil (either singl id) = |[\underline{nil}, [const, |uncurry calcLine|]]| . (id + (id + deCasteljau|^2|)) . (id + (id + split init tail))| 
+    %|deCasteljau . either nil (either singl id) = |[\underline{nil}, [const, (|\pt -> (uncurry calcLine . deCasteljau|^2)\ pt)]]|. (id + (id + split init tail))| 
+%
+\just\equiv{ Shunt-left }
+%
+    |deCasteljau = |[\underline{nil}, [const, |uncurry calcLine|]]| . (id + (id + deCasteljau|^2|)) . (id + (id + split init tail)) . outBezier| 
+\qed
+\end{eqnarray*}
+
+\newpage
+
 \subsection*{Problema 4}
 
-%format (inNList) = "\mathsf{in}_{NList}"
-%format (outNList) = "\mathsf{out}_{NList}"
-%format (cataNList (x)) = "\llparenthesis\, " x "\,\rrparenthesis"
-
-Definições de funções para catamorfismos sobre listas não vazias:
-\begin{code}
-inNList :: Either a (a, [a]) -> [a]
-inNList = either singl cons
----
-outNList :: [a] -> Either a (a, [a])
-outNList [a]     = i1 a
-outNList (a:as)  = i2 (a,as)
----
-cataNList :: (Either a (a, b) -> b) -> [a] -> b
-cataNList g = g . recNList (cataNList g) . outNList
----
-recNList :: (a -> b) -> Either x (y, a) -> Either x (y, b)
-recNList f = id -|- id >< f
-\end{code}
 Solução para listas não vazias:
 \begin{code}
 avg = p1 . avg_aux
 \end{code}
+
+%format (inNList) = "\mathsf{in}_{NList}"
+%format (outNList) = "\mathsf{out}_{NList}"
+%format (cataNList (x)) = "\llparenthesis\, " x "\,\rrparenthesis"
 
 %format a1 = "a_1"
 %format a2 = "a_2"
@@ -1799,6 +1852,21 @@ avgLTree = p1.cataLTree gene where
     gene = either init loop
     loop  ((a1,b1),(a2,b2))  = ((a1 * b1 + a2 * b2) / (b1 + b2), b1 + b2)
     init  a                  = (a, 1)
+\end{code}
+Definições de funções para catamorfismos sobre listas não vazias:
+\begin{code}
+inNList :: Either a (a, [a]) -> [a]
+inNList = either singl cons
+---
+outNList :: [a] -> Either a (a, [a])
+outNList [a]     = i1 a
+outNList (a:as)  = i2 (a,as)
+---
+cataNList :: (Either a (a, b) -> b) -> [a] -> b
+cataNList g = g . recNList (cataNList g) . outNList
+---
+recNList :: (a -> b) -> Either x (y, a) -> Either x (y, b)
+recNList f = id -|- id >< f
 \end{code}
 
 \newpage
