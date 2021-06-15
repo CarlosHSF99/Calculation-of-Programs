@@ -1098,7 +1098,7 @@ ad_gen v = either (const (v, 1)) (either (split id (const 0)) (either bin un)) w
 
 \newpage
 
-\noindent Prova da definição de outExpAr\\
+\noindent\textbf{Prova da definição de outExpAr\\}
 
 \begin{code}
 outExpAr :: ExpAr a -> OutExpAr a
@@ -1200,7 +1200,7 @@ outExpAr :: ExpAr a -> OutExpAr a
 
 \newpage
 
-\noindent Prova da definição de g\_eval\_exp\\
+\noindent\textbf{Prova da definição de g\_eval\_exp\\}
 
 \begin{code}
 g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (UnOp, a))) -> a
@@ -1322,6 +1322,21 @@ g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (Un
 \end{eqnarray*}
 
 \newpage
+
+\noindent\textbf{Propriedades usadas para definição de clean\\}
+
+Elemento absovente da multiplicação:
+\begin{eqnarray*}
+    x * 0 & = & 0\\
+    0 * x & = & 0
+\end{eqnarray*}
+
+Propriedade Expoente Zero:
+\begin{eqnarray*}
+    e ^ 0 & = & 1
+\end{eqnarray*}
+
+\noindent\textbf{Provas das definições de sd\_gen e ad\_gen\\}
 
 Devido à necessiade de conhecer não só as derivadas dos subtermos do produto e da exponenciação, mas também os seus valores de forma a fazer a sua derivação usámos um \textbf{Paramorfismo}\footnote{Fonte: \href{https://en.wikipedia.org/wiki/Paramorphism}{Wikipedia}.}. Algo que também é sugerido pelo \textit{wrapper} das funções, $\pi_2$.\\\\
 
@@ -1642,13 +1657,13 @@ Redefinindo c,
 
 \subsection*{Problema 3}
 
-%format (inBezier) = "\mathsf{in_{Bezier}}"
-%format (outBezier) = "\mathsf{out_{Bezier}}"
+%format (inBezier) = "\mathsf{in}_{Bezier}"
+%format (outBezier) = "\mathsf{out}_{Bezier}"
 %%format (cataBezier (x)) = "\llparenthesis\, " x "\,\rrparenthesis"
 %%format (anaBezier (x)) = "\lpbaren\, " x "\,\rpbaren"
 %%format (hyloBezier (c) (a)) = "\llbracket\, " c, a "\,\rrbracket"
-%format (recBezier) = "\mathsf{F_{Bezier}}"
-%format (baseBezier) = "\mathsf{B_{Bezier}}"
+%format (recBezier) = "\mathsf{F}_{Bezier}"
+%format (baseBezier) = "\mathsf{B}_{Bezier}"
 
 \begin{code}
 calcLine :: NPoint -> (NPoint -> OverTime NPoint)
@@ -1684,7 +1699,7 @@ recBezier f = id -|- (id -|- f >< f)
 
 %format (cataList (x)) = "\llparenthesis\, " x "\,\rrparenthesis"
 
-\noindent Diagrama da calcLine, definida como um catamorfismo de listas.
+\noindent\textbf{Prova da definição de calcLine}
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
     |NPoint|
@@ -1744,8 +1759,8 @@ recBezier f = id -|- (id -|- f >< f)
 
 \subsection*{Problema 4}
 
-%format (inNList) = "\mathsf{in_{NList}}"
-%format (outNList) = "\mathsf{out_{NList}}"
+%format (inNList) = "\mathsf{in}_{NList}"
+%format (outNList) = "\mathsf{out}_{NList}"
 %format (cataNList (x)) = "\llparenthesis\, " x "\,\rrparenthesis"
 
 Definições de funções para catamorfismos sobre listas não vazias:
@@ -1787,6 +1802,8 @@ avgLTree = p1.cataLTree gene where
 \end{code}
 
 \newpage
+
+\noindent\textbf{Prova da definição de out$_{NList}$}
 
 \begin{eqnarray*}
 \xymatrix@@C=1.5cm{
@@ -1834,7 +1851,7 @@ avgLTree = p1.cataLTree gene where
 %format q1 = "q_1"
 %format q2 = "q_2"
 
-\noindent Definição do gene de avg\_aux
+\noindent\textbf{Definição do gene de avg\_aux}
 
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
@@ -1982,7 +1999,7 @@ avgLTree = p1.cataLTree gene where
 
 \newpage
 
-\noindent Definição do gene de avgLTree
+\noindent\textbf{Definição do gene de avgLTree}
 
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
