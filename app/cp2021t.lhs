@@ -1341,11 +1341,13 @@ Devido à necessiade de conhecer não só as derivadas dos subtermos do produto 
 \setlength{\leftskip}{0pt}
 \setlength{\rightskip}{0pt}
 
+\newpage
+
 \begin{eqnarray*}
 \start
 	|split id sd . inExpAr = sd_gen . fF (sd_gen)|
 %
-\just\equiv{ Def-inExpAr; \ Def-F }
+\just\equiv{ Def-inExpAr; \ Def-|fF| }
 %
 	|split id sd . either (const X) (either N (either bin (uncurry Un))) = g . (id + (id + (id >< split id sd|^2|) + id >< split id sd)))|
 %
@@ -1377,7 +1379,7 @@ Devido à necessiade de conhecer não só as derivadas dos subtermos do produto 
   \begin{lcbr}
     |g2 a = split id sd (N a)|\\
     \begin{lcbr}
-      |g3 ((id >< (split id sd >< split id sd)) (binop, (a, b))) = split id sd (bin (binop, (a, b)))|\\
+      |g3 ((id >< (split id sd|^2|)) (binop, (a, b))) = split id sd (bin (binop, (a, b)))|\\
       |g4 ((id >< split id sd) (unop, a)) = split id sd ((uncurry Un) (unop, a))|
     \end{lcbr}
   \end{lcbr}
@@ -1396,39 +1398,162 @@ Devido à necessiade de conhecer não só as derivadas dos subtermos do produto 
   \end{lcbr}
 \end{lcbr}
 %
+\just\equiv{ Def-split; \ Natural-id }
+%
+\begin{lcbr}
+  |g1 () = (X, sd X)|\\
+  \begin{lcbr}
+    |g2 a = (N a, sd (N a))|\\
+    \begin{lcbr}
+      |g3 (binop, ((a, sd a), (b, sd b))) = (Bin binop a b, sd (Bin binop a b))|\\
+      |g4 (unop, (a, sd a)) = (Un unop a, sd (Un unop a))|
+    \end{lcbr}
+  \end{lcbr}
+\end{lcbr}
+%
 \just\equiv{ Pattern matching em binop e unop }
 %
 \begin{lcbr}
-  |g1 () = split id sd X|\\
+  |g1 () = (X, sd X)|\\
   \begin{lcbr}
-    |g2 a = split id sd (N a)|\\
+    |g2 a = (N a, sd (N a))|\\
     \begin{lcbr}
       \begin{lcbr}
-        |g3 (Sum, (split id sd a, split id sd b)) = split id sd (Bin Sum a b)|\\
-        |g3 (Product, (split id sd a, split id sd b)) = split id sd (Bin Product a b)|\\
+        |g3 (Sum, ((a, sd a), (b, sd b))) = (Bin Sum a b, sd (Bin Sum a b))|\\
+        |g3 (Product, ((a, sd a), (b, sd b))) = (Bin Product a b, sd (Bin Product a b))|\\
       \end{lcbr}\\
       \begin{lcbr}
-        |g4 (Negate, split id sd a) = split id sd (Un Negate a)|\\
-        |g4 (E, split id sd a) = split id sd (Un E a)|
+        |g4 (Negate, (a, sd a)) = (Un Negate a, sd (Un Negate a))|\\
+        |g4 (E, (a, sd a)) = (Un E a, sd (Un E a))|
       \end{lcbr}
     \end{lcbr}
   \end{lcbr}
 \end{lcbr}
 %
-\just\equiv{ Def-ev }
+\just\equiv{ Def-sd }
 %
 \begin{lcbr}
-  |g1 () = v|\\
+  |g1 () = (X, N 1)|\\
   \begin{lcbr}
-    |g2 a = a|\\
+    |g2 a = (N a, N 0)|\\
     \begin{lcbr}
       \begin{lcbr}
-        |g3 (Sum, (v1, v2)) = v1 + v2|\\
-        |g3 (Product, (v1, v2)) = v1 * v2|\\
+        |g3 (Sum, ((a, a'), (b, b'))) = (Bin Sum a b, Bin Sum a' b')|\\
+        |g3 (Product, ((a, a'), (b, b'))) = (Bin Product a b, Bin Product a' b')|\\
       \end{lcbr}\\
       \begin{lcbr}
-        |g4 (Negate, v1) = negate v1|\\
-        |g4 (E, v1) = expd v1|
+        |g4 (Negate, (a, a')) = (Un Negate a, Un Negate a')|\\
+        |g4 (E, (a, a')) = (Un E a, Un E a')|
+      \end{lcbr}
+    \end{lcbr}
+  \end{lcbr}
+\end{lcbr}
+\qed
+\end{eqnarray*}
+
+\newpage
+
+\begin{eqnarray*}
+\start
+	|split id (ad v) . inExpAr = (ad_gen v) . fF (sd_gen)|
+%
+\just\equiv{ Def-inExpAr; \ Def-|fF| }
+%
+	|split id (ad v) . either (const X) (either N (either bin (uncurry Un))) = (ad_gen v) . (id + (id + (id >< split id (ad v)|^2|) + id >< split id (ad v))))|
+%
+\just\equiv{ Inferência do tipo de g }
+%
+	|split id (ad v) . either (const X) (either N (either bin (uncurry Un))) = either g1 (either g2 (either g3 g4)) . (id + (id + (id >< split id (ad v)|^2|) + id >< split id (ad v))))|
+%
+\just\equiv{ 3 |><| Fusão-+; \ 3 |><| Asborsção-+; \ 2 |><| Natural-id }
+%
+    |either (split id (ad v) . (const X)) (either (split id (ad v) . N) (either (split id (ad v) . bin) (split id (ad v) . (uncurry Un))))| = [g_1, [g_2, [g_3 \cdot (|id >< split id (ad v)|^2)), g_4 \cdot (|id >< split id (ad v)|)]]]
+%
+\just\equiv{ 3 |><| Eq-+; \ f = g $\equiv$ g = f }
+%
+\begin{lcbr}
+  |g1 = split id (ad v) . (const X)|\\
+  \begin{lcbr}
+    |g2 = split id (ad v) . N|\\
+    \begin{lcbr}
+      |g3 . (id >< split id (ad v)|^2|) = split id (ad v) . bin|\\
+      |g4 . (id >< split id (ad v)) = split id (ad v) . (uncurry Un)|
+    \end{lcbr}
+  \end{lcbr}
+\end{lcbr}
+%
+\just\equiv{ Igualdade extensional; \ Def-comp }
+%
+\begin{lcbr}
+  |g1 v = split id (ad v) ((const X) v)|\\
+  \begin{lcbr}
+    |g2 a = split id (ad v) (N a)|\\
+    \begin{lcbr}
+      |g3 ((id >< (split id (ad v)|^2|)) (binop, (a, b))) = split id (ad v) (bin (binop, (a, b)))|\\
+      |g4 ((id >< split id (ad v)) (unop, a)) = split id (ad v) ((uncurry Un) (unop, a))|
+    \end{lcbr}
+  \end{lcbr}
+\end{lcbr}
+%
+\just\equiv{ Def-const; \ Def-N; \ Def-bin; \ Def-|uncurry Un|; \ Def-|><| }
+%
+\begin{lcbr}
+  |g1 v = split id (ad v) X|\\
+  \begin{lcbr}
+    |g2 a = split id (ad v) (N a)|\\
+    \begin{lcbr}
+      |g3 (binop, (split id (ad v) a, split id (ad v) b)) = split id (ad v) (Bin binop a b)|\\
+      |g4 (unop, split id (ad v) a) = split id (ad v) (Un unop a)|
+    \end{lcbr}
+  \end{lcbr}
+\end{lcbr}
+%
+\just\equiv{ Def-split; \ Natural-id }
+%
+\begin{lcbr}
+  |g1 v = (X, (ad v) X)|\\
+  \begin{lcbr}
+    |g2 a = (N a, (ad v) (N a))|\\
+    \begin{lcbr}
+      |g3 (binop, ((a, (ad v) a), (b, (ad v) b))) = (Bin binop a b, (ad v) (Bin binop a b))|\\
+      |g4 (unop, (a, (ad v) a)) = (Un unop a, (ad v) (Un unop a))|
+    \end{lcbr}
+  \end{lcbr}
+\end{lcbr}
+%
+\just\equiv{ Pattern matching em binop e unop }
+%
+\begin{lcbr}
+  |g1 v = (X, (ad v) X)|\\
+  \begin{lcbr}
+    |g2 a = (N a, (ad v) (N a))|\\
+    \begin{lcbr}
+      \begin{lcbr}
+        |g3 (Sum, ((a, (ad v) a), (b, (ad v) b))) = (Bin Sum a b, (ad v) (Bin Sum a b))|\\
+        |g3 (Product, ((a, (ad v) a), (b, (ad v) b))) = (Bin Product a b, (ad v) (Bin Product a b))|\\
+      \end{lcbr}\\
+      \begin{lcbr}
+        |g4 (Negate, (a, (ad v) a)) = (Un Negate a, (ad v) (Un Negate a))|\\
+        |g4 (E, (a, (ad v) a)) = (Un E a, (ad v) (Un E a))|
+      \end{lcbr}
+    \end{lcbr}
+  \end{lcbr}
+\end{lcbr}
+%
+\just\equiv{ Def-(ad v) }
+%
+\begin{lcbr}
+  |g1 v = (v, 1)|\\
+  \begin{lcbr}
+    |g2 a = (a, 0)|\\
+    \begin{lcbr}
+      \begin{lcbr}
+        |g3 (Sum, ((a, a'), (b, b'))) = (a + b, a' + b')|\\
+        |g3 (Product, ((a, a'), (b, b'))) = (a * b, a * b' + a' * b)|\\
+      \end{lcbr}\\
+      \begin{lcbr}
+        |g4 (Negate, (a, a')) = (negate a, negate a')|\\
+        |g4 (E, (a, a')) = (expd a, expd a * a')|
       \end{lcbr}
     \end{lcbr}
   \end{lcbr}
