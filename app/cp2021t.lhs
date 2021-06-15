@@ -1240,7 +1240,7 @@ g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (Un
 %
 \just\equiv{ 3 |><| Fusão-+; \ 3 |><| Asborsção-+; \ 2 |><| Natural-id }
 %
-    |either ((ev v) . (const X)) (either ((ev v) . N) (either ((ev v) . bin) ((ev v) . (uncurry Un)))) = either g1 (either g2 (either (g3 . (id >< (ev v >< ev v))) (g4 . (id >< ev a))))|
+    |either ((ev v) . (const X)) (either ((ev v) . N) (either ((ev v) . bin) ((ev v) . (uncurry Un)))) = either g1 (either g2 (either (g3 . (id >< (ev v >< ev v))) (g4 . (id >< ev v))))|
 %
 \just\equiv{ 3 |><| Eq-+; \ f = g $\equiv$ g = f }
 %
@@ -1323,7 +1323,7 @@ g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (Un
 
 \newpage
 
-Devido à necessiade de saber não só as derivadas dos subtermos do produto e da exponenciação, mas também os seus valores de forma a fazer a sua derivação usámos um \textbf{Paramorfismo}\footnote{Fonte: \href{https://en.wikipedia.org/wiki/Paramorphism}{Wikipedia}.}. Algo que também é sugerido pelo \textit{wrapper} das funções, $\pi_2$.\\\\
+Devido à necessiade de conhecer não só as derivadas dos subtermos do produto e da exponenciação, mas também os seus valores de forma a fazer a sua derivação usámos um \textbf{Paramorfismo}\footnote{Fonte: \href{https://en.wikipedia.org/wiki/Paramorphism}{Wikipedia}.}. Algo que também é sugerido pelo \textit{wrapper} das funções, $\pi_2$.\\\\
 
 \setlength{\leftskip}{1cm}
 \setlength{\rightskip}{1cm}
@@ -1340,6 +1340,101 @@ Devido à necessiade de saber não só as derivadas dos subtermos do produto e d
 
 \setlength{\leftskip}{0pt}
 \setlength{\rightskip}{0pt}
+
+\begin{eqnarray*}
+\start
+	|split id sd . inExpAr = sd_gen . fF (sd_gen)|
+%
+\just\equiv{ Def-inExpAr; \ Def-F }
+%
+	|split id sd . either (const X) (either N (either bin (uncurry Un))) = g . (id + (id + (id >< split id sd|^2|) + id >< split id sd)))|
+%
+\just\equiv{ Inferência do tipo de g }
+%
+	|split id sd . either (const X) (either N (either bin (uncurry Un))) = either g1 (either g2 (either g3 g4)) . (id + (id + (id >< split id sd|^2|) + id >< split id sd)))|
+%
+\just\equiv{ 3 |><| Fusão-+; \ 3 |><| Asborsção-+; \ 2 |><| Natural-id }
+%
+    |either (split id sd . (const X)) (either (split id sd . N) (either (split id sd . bin) (split id sd . (uncurry Un))))| = [g_1, [g_2, [g_3 \cdot (|id >< split id sd|^2)), g_4 \cdot (|id >< split id sd|)]]]
+%
+\just\equiv{ 3 |><| Eq-+; \ f = g $\equiv$ g = f }
+%
+\begin{lcbr}
+  |g1 = split id sd . (const X)|\\
+  \begin{lcbr}
+    |g2 = split id sd . N|\\
+    \begin{lcbr}
+      |g3 . (id >< split id sd|^2|) = split id sd . bin|\\
+      |g4 . (id >< split id sd) = split id sd . (uncurry Un)|
+    \end{lcbr}
+  \end{lcbr}
+\end{lcbr}
+%
+\just\equiv{ Igualdade extensional; \ Def-comp }
+%
+\begin{lcbr}
+  |g1 () = split id sd ((const X) ())|\\
+  \begin{lcbr}
+    |g2 a = split id sd (N a)|\\
+    \begin{lcbr}
+      |g3 ((id >< (split id sd >< split id sd)) (binop, (a, b))) = split id sd (bin (binop, (a, b)))|\\
+      |g4 ((id >< split id sd) (unop, a)) = split id sd ((uncurry Un) (unop, a))|
+    \end{lcbr}
+  \end{lcbr}
+\end{lcbr}
+%
+\just\equiv{ Def-const; \ Def-N; \ Def-bin; \ Def-|uncurry Un|; \ Def-|><| }
+%
+\begin{lcbr}
+  |g1 () = split id sd X|\\
+  \begin{lcbr}
+    |g2 a = split id sd (N a)|\\
+    \begin{lcbr}
+      |g3 (binop, (split id sd a, split id sd b)) = split id sd (Bin binop a b)|\\
+      |g4 (unop, split id sd a) = split id sd (Un unop a)|
+    \end{lcbr}
+  \end{lcbr}
+\end{lcbr}
+%
+\just\equiv{ Pattern matching em binop e unop }
+%
+\begin{lcbr}
+  |g1 () = split id sd X|\\
+  \begin{lcbr}
+    |g2 a = split id sd (N a)|\\
+    \begin{lcbr}
+      \begin{lcbr}
+        |g3 (Sum, (split id sd a, split id sd b)) = split id sd (Bin Sum a b)|\\
+        |g3 (Product, (split id sd a, split id sd b)) = split id sd (Bin Product a b)|\\
+      \end{lcbr}\\
+      \begin{lcbr}
+        |g4 (Negate, split id sd a) = split id sd (Un Negate a)|\\
+        |g4 (E, split id sd a) = split id sd (Un E a)|
+      \end{lcbr}
+    \end{lcbr}
+  \end{lcbr}
+\end{lcbr}
+%
+\just\equiv{ Def-ev }
+%
+\begin{lcbr}
+  |g1 () = v|\\
+  \begin{lcbr}
+    |g2 a = a|\\
+    \begin{lcbr}
+      \begin{lcbr}
+        |g3 (Sum, (v1, v2)) = v1 + v2|\\
+        |g3 (Product, (v1, v2)) = v1 * v2|\\
+      \end{lcbr}\\
+      \begin{lcbr}
+        |g4 (Negate, v1) = negate v1|\\
+        |g4 (E, v1) = expd v1|
+      \end{lcbr}
+    \end{lcbr}
+  \end{lcbr}
+\end{lcbr}
+\qed
+\end{eqnarray*}
 
 \newpage
 
@@ -1422,11 +1517,19 @@ Redefinindo c,
 
 \subsection*{Problema 3}
 
+%format (inBezier) = "\mathsf{in_{Bezier}}"
+%format (outBezier) = "\mathsf{out_{Bezier}}"
+%%format (cataBezier (x)) = "\llparenthesis\, " x "\,\rrparenthesis"
+%%format (anaBezier (x)) = "\lpbaren\, " x "\,\rpbaren"
+%%format (hyloBezier (c) (a)) = "\llbracket\, " c, a "\,\rrbracket"
+%format (recBezier) = "\mathsf{F_{Bezier}}"
+%format (baseBezier) = "\mathsf{B_{Bezier}}"
+
 \begin{code}
 calcLine :: NPoint -> (NPoint -> OverTime NPoint)
 calcLine = cataList h where
     h = either f g
-    f = const $ const nil
+    f = const (const nil)
     g (d,f) l = case l of
         []     -> nil
         (x:xs) -> \z -> concat $ (sequenceA [singl . linear1d d x, f xs]) z
@@ -1435,7 +1538,7 @@ calcLine = cataList h where
 deCasteljau :: [NPoint] -> OverTime NPoint
 deCasteljau = hyloBezier conquer divide where
     divide   = outBezier
-    conquer  = either (const . nil) (either const f)
+    conquer  = either (const nil) (either const f)
     f (a,b)  = \pt -> (calcLine (a pt) (b pt)) pt
 \end{code}
 \begin{code}
@@ -1443,9 +1546,13 @@ outBezier []   = i1 ()
 outBezier [a]  = i2 $ i1 a
 outBezier l    = i2 $ i2 (init l, tail l)
 ---
-hyloBezier f g = f . rec(hyloBezier f g) . g 
+cataBezier g = undefined
 ---
-rec f = id -|- (id -|- f >< f)
+anaBezier g = undefined
+---
+hyloBezier f g = f . recBezier (hyloBezier f g) . g 
+---
+recBezier f = id -|- (id -|- f >< f)
 \end{code}
 
 \newpage
@@ -1479,24 +1586,32 @@ rec f = id -|- (id -|- f >< f)
 \just\equiv{ Def-comp }
 %
     \begin{lcbr}
-        |calcLine . nil a = |const| . |const| . nil a|\\
+        |calcLine . nil a = const (const nil) a|\\
         |calcLine . cons (p,x) = g . (id >< calcLine) (p,x)|\\
     \end{lcbr}
 %
 \just\equiv{ Igualdade extensional }
 %
     \begin{lcbr}
-        |calcLine . nil = |const| . |const| . nil|\\
+        |calcLine . nil = const (const nil)|\\
         |calcLine . cons = g . (id >< calcLine)|\\
     \end{lcbr}
 %
-\just\equiv{ Eq-+ }
+\just\equiv{ Eq-+; \ Natural-id }
 %
-    |either (calcLine . nil) (calcLine . cons) = either (|const| . |const| . nil) (g . (id >< calcLine))|\\
+    |either (calcLine . nil) (calcLine . cons) = either (const (const  nil)) (g . (id >< calcLine))|
 %
-\just\equiv{ Fusão-+; \ Absorção-+; \ Natural-id }
+\just\equiv{ Fusão-+; \ Absorção-+ }
 %
-    |calcLine . either nil cons = either (|const| . |const| . nil) g . (id -|- id >< calcLine))|\\
+    |calcLine . either nil cons = either (const (const nil)) g . (id + id >< calcLine))|
+%
+\just\equiv{ Def-inList; \ Def-|fF| }
+%
+    |calcLine . inList = either (const (const nil)) g . fF calcLine|
+%
+\just\equiv{ Universal-cata }
+%
+    |calcLine = cataList (either (const (const nil)) g)|
 \qed
 \end{eqnarray*}
 
