@@ -182,22 +182,24 @@ let hanoi x = hyloBTree present strategy x
     (excerpt from R. Backhouse, M. Fokkinga / Information Processing
     Letters 77 (2001) 71--76)
    
-   
+   *)
 // (5) Depth and balancing (using mutual recursion) --------------------------
 
+let h (a,((b1,b2),(d1,d2))) = (b1 && b2 && abs(d1-d2)<=1,1+max d1 d2)
+
+let f ((b1,d1),(b2,d2)) = ((b1,b2),(d1,d2))
+
 let baldepth x = 
-    let h (a,((b1,b2),(d1,d2))) = (b1 && b2 && abs(d1-d2)<=1,1+max d1 d2)
-    let f ((b1,d1),(b2,d2)) = ((b1,b2),(d1,d2))
-    in 
-        let g = either (konst(true,1)) (h << (id><f))
-        in cataBTree g x
+    let g = either (konst(true,1)) (h << (id><f))
+    in cataBTree g x
 
 
-let balBTree x = p1 << baldepth x
+let balBTree x = p1 (baldepth x)
 
-let depthBTree x = p2 << baldepth x
+let depthBTree x = p2 (baldepth x)
 
 
+(*
 -- (6) Going polytipic -------------------------------------------------------
 
 -- natural transformation from base functor to monoid
