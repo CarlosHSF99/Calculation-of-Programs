@@ -676,7 +676,7 @@ prop_bezier_sym l = all (< delta) . calc_difs . bezs <$> elements ps  where
 \Problema
 
 Seja dada a fórmula que calcula a média de uma lista não vazia $x$,
-\begin{equation}
+\begin{equation}\label{eq:2}
 avg\ x = \frac 1 k\sum_{i=1}^{k} x_i
 \end{equation}
 onde $k=length\ x$. Isto é, para sabermos a média de uma lista precisamos de dois catamorfismos: o que faz o somatório e o que calcula o comprimento a lista.
@@ -1051,6 +1051,10 @@ ad v = p2 . cataExpAr (ad_gen v)
 
 \newpage
 
+%format (outExpAr) = "\mathsf{out}_{ExpAr}"
+%format (recExpAr) = "\mathsf{F}_{ExpAr}"
+%format (baseExpAr) = "\mathsf{B}_{ExpAr}"
+
 \noindent Definir:
 
 \begin{code}
@@ -1061,13 +1065,26 @@ outExpAr (Un op a)     = i2 $ i2 $ i2 (op, a)
 ---
 recExpAr f = baseExpAr id id id f f id f
 ---
-g_eval_exp_pw v = either g1 (either g2 (either g3 g4)) where
-    g1 ()                 = v
-    g2 a                  = a
-    g3 (Sum,     (a, b))  = a + b
-    g3 (Product, (a, b))  = a * b
-    g4 (Negate, a)        = negate a
-    g4 (E,      a)        = expd a
+g_eval_exp v = either con (either var (either bin un)) where
+    con  ()                 = v
+    var  a                  = a
+    bin  (Sum,     (a, b))  = a + b
+    bin  (Product, (a, b))  = a * b
+    un   (Negate, a)        = negate a
+    un   (E,      a)        = expd a
+
+eval_exp' v = cataExpAr $ g_eval_exp' v
+
+g_eval_exp' v = either con (either var (either bin un)) where
+    con  ()                 = v
+    var  a                  = a
+    bin  (Sum,     (a, b))  = a + b
+    bin  (Product, (0, b))  = 0
+    bin  (Product, (a, 0))  = 0
+    bin  (Product, (a, b))  = a * b
+    un   (Negate, a)        = negate a
+    un   (E,      0)        = 1
+    un   (E,      a)        = expd a
 ---
 clean (Bin Product (N 0) _)  = i2 $ i1 0
 clean (Bin Product _ (N 0))  = i2 $ i1 0
@@ -1081,7 +1098,9 @@ gopt a = g_eval_exp a
 sd_gen :: Floating a =>
     Either () (Either a (Either (BinOp, ((ExpAr a, ExpAr a), (ExpAr a, ExpAr a))) (UnOp, (ExpAr a, ExpAr a))))
     -> (ExpAr a, ExpAr a)
-sd_gen = either (const (X, N 1)) (either (split N (const (N 0))) (either bin un)) where
+sd_gen = either con (either var (either bin un)) where
+  con _  = (X, N 1)
+  var a  = (N a, N 0)
   bin  (Sum      , ((x, x'), (y, y')))  = (Bin  Sum      x y  , Bin  Sum x' y')
   bin  (Product  , ((x, x'), (y, y')))  = (Bin  Product  x y  , Bin  Sum (Bin Product x y') (Bin Product x' y))
   un   (Negate   ,  (x, x'))            = (Un   Negate   x    , Un   Negate x')
@@ -1089,7 +1108,9 @@ sd_gen = either (const (X, N 1)) (either (split N (const (N 0))) (either bin un)
 \end{code}
 
 \begin{code}
-ad_gen v = either (const (v, 1)) (either (split id (const 0)) (either bin un)) where
+ad_gen v = either con (either var (either bin un)) where
+  con _ = (v, 1)
+  var a = (a, 0)
   bin  (Sum      , ((x, x'), (y, y')))  = (x + y     , x' + y')
   bin  (Product  , ((x, x'), (y, y')))  = (x * y     , x * y' + x' * y)
   un   (Negate   ,  (x, x'))            = (negate x  , negate x')
@@ -1099,11 +1120,6 @@ ad_gen v = either (const (v, 1)) (either (split id (const 0)) (either bin un)) w
 \newpage
 
 \noindent\textbf{Prova da definição de outExpAr\\}
-
-\begin{code}
-outExpAr :: ExpAr a -> OutExpAr a
-\end{code}
-%outExpAr :: ExpAr a -> Either () (Either a (Either (BinOp, (ExpAr a, ExpAr a)) (UnOp, ExpAr a)))
 
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
@@ -1202,9 +1218,6 @@ outExpAr :: ExpAr a -> OutExpAr a
 
 \noindent\textbf{Prova da definição de g\_eval\_exp\\}
 
-\begin{code}
-g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (UnOp, a))) -> a
-\end{code}
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
     |ExpAr A|
@@ -1300,20 +1313,20 @@ g_eval_exp :: Floating a => a -> Either () (Either a (Either (BinOp, (a, a)) (Un
   \end{lcbr}
 \end{lcbr}
 %
-\just\equiv{ Def-ev }
+\just\equiv{ Def-ev; \ |con| := |g1|; \ |var| := |g2|; \ |bin| := |g3|; \ |un| := |g4| }
 %
 \begin{lcbr}
-  |g1 () = v|\\
+  |con () = v|\\
   \begin{lcbr}
-    |g2 a = a|\\
+    |var a = a|\\
     \begin{lcbr}
       \begin{lcbr}
-        |g3 (Sum, (v1, v2)) = v1 + v2|\\
-        |g3 (Product, (v1, v2)) = v1 * v2|\\
+        |bin (Sum, (v1, v2)) = v1 + v2|\\
+        |bin (Product, (v1, v2)) = v1 * v2|\\
       \end{lcbr}\\
       \begin{lcbr}
-        |g4 (Negate, v1) = negate v1|\\
-        |g4 (E, v1) = expd v1|
+        |un (Negate, v1) = negate v1|\\
+        |un (E, v1) = expd v1|
       \end{lcbr}
     \end{lcbr}
   \end{lcbr}
@@ -1338,7 +1351,7 @@ Propriedade Expoente Zero:
 \\\\
 \noindent\textbf{Provas das definições de sd\_gen e ad\_gen\\}
 
-Devido à necessiade de conhecer não só as derivadas dos subtermos do produto e da exponenciação, mas também os seus valores de forma a fazer a sua derivação usámos um \textbf{Paramorfismo}\footnote{Fonte: \href{https://en.wikipedia.org/wiki/Paramorphism}{Wikipedia}.}. Algo que também é sugerido pelo \textit{wrapper} das funções, $\pi_2$.\\\\
+Devido à necessiade de conhecer não só as derivadas dos subtermos do produto e da exponenciação, mas também os seus valores originais de forma a fazer a sua derivação usámos um \textbf{Paramorfismo}\footnote{Fonte: \href{https://en.wikipedia.org/wiki/Paramorphism}{Wikipedia}.}. Algo que também é sugerido pelo \textit{wrapper}, $\pi_2$, das funções |sd| e |ad|.\\\\
 
 \setlength{\leftskip}{1cm}
 \setlength{\rightskip}{1cm}
@@ -1355,6 +1368,8 @@ Devido à necessiade de conhecer não só as derivadas dos subtermos do produto 
 
 \setlength{\leftskip}{0pt}
 \setlength{\rightskip}{0pt}
+
+Diagramas dos catamorfismos presentes em |sd| e |ad| respetivamente:
 
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
@@ -1375,16 +1390,16 @@ Devido à necessiade de conhecer não só as derivadas dos subtermos do produto 
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
     |ExpAr A|
-            \ar[d]_-{|split id (ad v)|}
+        \ar[d]_-{|split id (ad v)|}
 &
     |1 + (A + (BinOp >< (ExpAr A)|^2| + UnOp >< ExpAr A))|
-            \ar[d]^{|id + (id + (id >< (split id (ad v) >< split id (ad v)) + id >< split id (ad v)))|}
-            \ar[l]_-{|inExpAr|}
+        \ar[d]^{|id + (id + (id >< (split id (ad v) >< split id (ad v)) + id >< split id (ad v)))|}
+        \ar[l]_-{|inExpAr|}
 \\
-    {\R}
+    {A}
 &
-    |1 + (B + (BinOp >< (|\R| >< |\R|) + UnOp >< |\R|))|
-            \ar[l]^-{|ad_gen v|}
+    |1 + (A + (BinOp >< (A|^2| >< A|^2|) + UnOp >< A|^2|))|
+        \ar[l]^-{|ad_gen v|}
 }
 \end{eqnarray*}
 
@@ -1479,20 +1494,20 @@ Devido à necessiade de conhecer não só as derivadas dos subtermos do produto 
   \end{lcbr}
 \end{lcbr}
 %
-\just\equiv{ Def-sd }
+\just\equiv{ Def-sd; \ |con| := |g1|; \ |var| := |g2|; \ |bin| := |g3|; \ |un| := |g4| }
 %
 \begin{lcbr}
-  |g1 () = (X, N 1)|\\
+  |con () = (X, N 1)|\\
   \begin{lcbr}
-    |g2 a = (N a, N 0)|\\
+    |var a = (N a, N 0)|\\
     \begin{lcbr}
       \begin{lcbr}
-        |g3 (Sum, ((a, a'), (b, b'))) = (Bin Sum a b, Bin Sum a' b')|\\
-        |g3 (Product, ((a, a'), (b, b'))) = (Bin Product a b, Bin Product a' b')|\\
+        |bin (Sum, ((a, a'), (b, b'))) = (Bin Sum a b, Bin Sum a' b')|\\
+        |bin (Product, ((a, a'), (b, b'))) = (Bin Product a b, Bin Product a' b')|\\
       \end{lcbr}\\
       \begin{lcbr}
-        |g4 (Negate, (a, a')) = (Un Negate a, Un Negate a')|\\
-        |g4 (E, (a, a')) = (Un E a, Un E a')|
+        |un (Negate, (a, a')) = (Un Negate a, Un Negate a')|\\
+        |un (E, (a, a')) = (Un E a, Un E a')|
       \end{lcbr}
     \end{lcbr}
   \end{lcbr}
@@ -1591,20 +1606,20 @@ Devido à necessiade de conhecer não só as derivadas dos subtermos do produto 
   \end{lcbr}
 \end{lcbr}
 %
-\just\equiv{ Def-(ad v) }
+\just\equiv{ Def-ad; \ |con| := |g1|; \ |var| := |g2|; \ |bin| := |g3|; \ |un| := |g4| }
 %
 \begin{lcbr}
-  |g1 v = (v, 1)|\\
+  |con v = (v, 1)|\\
   \begin{lcbr}
-    |g2 a = (a, 0)|\\
+    |var a = (a, 0)|\\
     \begin{lcbr}
       \begin{lcbr}
-        |g3 (Sum, ((a, a'), (b, b'))) = (a + b, a' + b')|\\
-        |g3 (Product, ((a, a'), (b, b'))) = (a * b, a * b' + a' * b)|\\
+        |bin (Sum, ((a, a'), (b, b'))) = (a + b, a' + b')|\\
+        |bin (Product, ((a, a'), (b, b'))) = (a * b, a * b' + a' * b)|\\
       \end{lcbr}\\
       \begin{lcbr}
-        |g4 (Negate, (a, a')) = (negate a, negate a')|\\
-        |g4 (E, (a, a')) = (expd a, expd a * a')|
+        |un (Negate, (a, a')) = (negate a, negate a')|\\
+        |un (E, (a, a')) = (expd a, expd a * a')|
       \end{lcbr}
     \end{lcbr}
   \end{lcbr}
@@ -1662,6 +1677,8 @@ Redefinindo c,
              & = & \frac {(t\ n)(c\ n)} {b\ n}
 \end{eqnarray*}
 
+Das definições das funções |c|, |t| e |b| é usada a \emph{regra de algibeira} descrita na página \ref{pg:regra} deste enunciado para derivar uma implementação de C$_n$
+
 \newpage
 
 \noindent Desenvolvimento das expressões algébricas acima:
@@ -1688,6 +1705,26 @@ Redefinindo c,
                & = & 1 + (n + 2)\\
                & = & 1 + b\ n\\
 \end{eqnarray*}
+
+\noindent Testes de correção e performance
+
+\begin{code}
+oracleCmp = (map cat [0..25]) == oracle
+catdefCmp = (map cat [0..99]) == (map catdef [0..99])
+\end{code}
+
+\begin{verbatim}
+*Main BTree Cp LTree List Nat Paths_cp2021tStack> oracleCmp
+True
+*Main BTree Cp LTree List Nat Paths_cp2021tStack> catdefCmp
+True
+*Main BTree Cp LTree List Nat Paths_cp2021tStack> catdef 100000
+1780545081823061907837573390658902019302...7404946049551384445058055232123705950784
+(68.63 secs, 71,864,876,408 bytes)
+1780545081823061907837573390658902019302...7404946049551384445058055232123705950784
+*Main BTree Cp LTree List Nat Paths_cp2021tStack> cat 100000
+(4.48 secs, 3,077,657,400 bytes)
+\end{verbatim}
 
 \newpage
 
@@ -1728,6 +1765,8 @@ recBezier f = id -|- (id -|- f >< f)
 \newpage
 
 %format (cataList (x)) = "\llparenthesis\, " x "\,\rrparenthesis"
+%format (inList) = "\mathsf{in}_{List}"
+%format (outList) = "\mathsf{out}_{List}"
 
 \noindent\textbf{Prova da definição de calcLine}
 \begin{eqnarray*}
@@ -1739,9 +1778,9 @@ recBezier f = id -|- (id -|- f >< f)
     |1 + Rational + NPoint|
            \ar[d]^{|1 + id >< (cataList (h))|}
 \\
-    |expn (Overtime NPoint) NPoint|
+    |(Overtime NPoint)|^{NPoint}
 &
-    |1 + Rational + expn (Overtime NPoint) NPoint|
+    |1 + Rational + (Overtime NPoint)|^{NPoint}
            \ar[l]^-{|h|}
 }
 \end{eqnarray*}
@@ -1784,8 +1823,16 @@ recBezier f = id -|- (id -|- f >< f)
     |calcLine = cataList (either (const (const nil)) g)|
 \qed
 \end{eqnarray*}
+\\
+\indent Conclui-se assim que |h = either (cons (cons nil)) g| onde |g| é definido por:
+\begin{spec}
+   g (d,f) l = case l of
+       []     -> nil
+       (x:xs) -> \z -> concat $ (sequenceA [singl . linear1d d x, f xs]) z
+\end{spec}
 
 \newpage
+\noindent\textbf{Prova da definição de deCasteljau}
 
 \begin{eqnarray*}
 \start
@@ -1823,6 +1870,66 @@ recBezier f = id -|- (id -|- f >< f)
 \qed
 \end{eqnarray*}
 
+Esta prova não é satisfatória para definir |deCasteljau| como um hylomorfismo devido à dificuldade de proceder nesta com a função anónima. Porém, seguindo esta prova e outros exemplos da aula 9 da disciplina é possivél concluir que:
+\begin{itemize}
+  \item |divide = (id + (id + split init tail)) . outBezier|
+  \item |conquer = either (const nil) (either const f)|
+  \item |recBezier f = id + (id + f >< f)|
+\end{itemize}
+Onde a função |f| em |conquer| é definida por:
+\begin{itemize}
+  \item |f (a,b) = \pt -> (calcLine (a pt) (b pt)) pt|
+\end{itemize}
+
+\newpage
+
+\noindent\textbf{Testes de correção}
+
+Definições das funções do Problema 3 dadas como especificações:
+
+\begin{code}
+calcLineSpec :: NPoint -> (NPoint -> OverTime NPoint)
+calcLineSpec []     = const nil
+calcLineSpec (p:x)  = curry g p (calcLineSpec x) where
+   g :: (Rational, NPoint -> OverTime NPoint) -> (NPoint -> OverTime NPoint)
+   g (d,f) l = case l of
+       []     -> nil
+       (x:xs) -> \z -> concat $ (sequenceA [singl . linear1d d x, f xs]) z
+\end{code}
+
+\begin{code}
+deCasteljauSpec :: [NPoint] -> OverTime NPoint
+deCasteljauSpec [] = nil
+deCasteljauSpec [p] = const p
+deCasteljauSpec l = \pt -> (calcLine (p pt) (q pt)) pt where
+  p = deCasteljauSpec (init l)
+  q = deCasteljauSpec (tail l)
+\end{code}
+
+Funções de verificação das funções definidas como resposta ao Problema 3 através das especificações destas:
+
+\begin{code}
+verifyCalcLine pt1 pt2 x = (calcLine pt1 pt2 x) == (calcLineSpec pt1 pt2 x)
+verifyDeCasteljau pts x = (deCasteljau pts x) == (deCasteljauSpec pts x)
+\end{code}
+
+Verificação no ghci:
+
+\begin{verbatim}
+*Main> verifyCalcLine [0,0] [0,1] 0.5
+True
+*Main> verifyDeCasteljau [[0,0],[0,1],[1,0]] 0.5
+True
+*Main> map fromRational $ deCasteljau [[0,0],[0,1],[1,0]] 0.5
+[0.25,0.5]
+\end{verbatim}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.4\textwidth]{cp2021t_media/deCasteljau.png}
+  \caption{Exemplo de curva de Bézier criada com as funções dadas como especificação.}
+\end{figure}
+
 \newpage
 
 \subsection*{Problema 4}
@@ -1834,7 +1941,8 @@ avg = p1 . avg_aux
 
 %format (inNList) = "\mathsf{in}_{NList}"
 %format (outNList) = "\mathsf{out}_{NList}"
-%format (cataNList (x)) = "\llparenthesis\, " x "\,\rrparenthesis"
+%format (cataNList (x)) = "\llparenthesis\, " x "\,\rrparenthesis_{NList}"
+%format (recNList) = "\mathsf{F}_{NList}"
 
 %format a1 = "a_1"
 %format a2 = "a_2"
@@ -1919,7 +2027,7 @@ recNList f = id -|- id >< f
 %format q1 = "q_1"
 %format q2 = "q_2"
 
-\noindent\textbf{Definição do gene de avg\_aux}
+\noindent\textbf{Prova da definição do gene de avg\_aux}
 
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
@@ -2021,53 +2129,12 @@ recNList f = id -|- id >< f
             |q2 (a, (avg as, length as)) = length as + 1|\\
         \end{lcbr}
     \end{lcbr}
-%
-\just\equiv{ Def-comp; \ Igualdade extensional }
-%
-    \begin{lcbr}
-        \begin{lcbr}
-            |b1 = id|\\
-            |q1 = uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2)|\\
-        \end{lcbr}\\
-        \begin{lcbr}
-            |b2 = one|\\
-            |q2 = succ . p2 . p2|\\
-        \end{lcbr}
-    \end{lcbr}
-%
-\just\equiv{ Eq-+; \ Eq-|><|; \ Lei da troca; \ Eq-+ }
-%
-    \begin{lcbr}
-        |split b1 b2 = split id one|\\
-        |split q1 q2 = split (uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2)) (succ . p2 . p2)|\\
-    \end{lcbr}
-%
-\just\equiv{ |split b1 b2| := |init|; \ |split q1 q2| := |loop|; \ Igualdade extensional }
-%
-    \begin{lcbr}
-        |init a = split id one a|\\
-        |loop (a,(len_as,avg_as)) = split (uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2)) (succ . p2 . p2) (a,(len_as,avg_as))|\\
-    \end{lcbr}
-%
-\just\equiv{ Def-split }
-%
-    \begin{lcbr}
-        |init a = (id a, one a)|\\
-        |loop (a,(b,c)) = ((uncurry (/) ((add ((id >< mul) (a,(b,c)))), (succ (p2 (p2 (a,(b,c))))))), (succ (p2 (p2 (a,(b,c))))))|\\
-    \end{lcbr}
-%
-\just\equiv{ Natural-id; \ Def-one; \ Def-|><|; \ Def-|p2|; \ Def-succ; \ Def-mul; \ Def-add  }
-%
-    \begin{lcbr}
-        |init a = (a, 1)|\\
-        |loop (a,(b,c)) = (a + b * c) / (c + 1), c + 1)|\\
-    \end{lcbr}
 \qed
 \end{eqnarray*}
 
 \newpage
 
-\noindent\textbf{Definição do gene de avgLTree}
+\noindent\textbf{Prova da definição do gene de avgLTree}
 
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
@@ -2087,15 +2154,15 @@ recNList f = id -|- id >< f
 
 \begin{eqnarray*}
 \start
-	|avgLTree = cataListN (either b q)|
+	|avgLTree = cataLTree (either b q)|
 %
 \just\equiv{ |avgLTree = split avg length| }
 %
-	|split avg length = cataListN (either b q)|
+	|split avg length = cataLTree (either b q)|
 %
 \just\equiv{ Inferência dos tipos de b e q; \ Lei da troca }
 %
-	|split avg length = cataListN (split (either b1 q1) (either b2 q2))|
+	|split avg length = cataLTree (split (either b1 q1) (either b2 q2))|
 %
 \just\equiv{ Lei da recursividade mútua (Fokkinga) }
 %
@@ -2104,7 +2171,7 @@ recNList f = id -|- id >< f
         |length . inT = either b2 q2 . fF (split avg length)|\\
     \end{lcbr}
 %
-\just\equiv{ Def-in; \ Def-F }
+\just\equiv{ Def-in; \ Def-|fF| }
 %
     \begin{lcbr}
         |avg . either Leaf Fork = either b1 q1 . (id + (split avg length)|^2)\\
@@ -2114,8 +2181,8 @@ recNList f = id -|- id >< f
 \just\equiv{ 2 |><| Fusão-+; \ 2 |><| Absorção-+; \ 2 |><| Natural-id }
 %
     \begin{lcbr}
-        |either (avg . Leaf) (avg . Fork) = either b1 (q1 . (split avg length)|^2)\\
-        |either (length . Leaf) (length . Fork) = either b2 (q2 . (split avg length)|^2)\\
+        |either (avg . Leaf) (avg . Fork)| = [b1, |q1 . (split avg length)|^2]\\
+        |either (length . Leaf) (length . Fork)| = [b2, |q2 . (split avg length)|^2]\\
     \end{lcbr}
 %
 \just\equiv{ 2 |><| Eq-+; \ f = g |==| g = f }
@@ -2136,11 +2203,11 @@ recNList f = id -|- id >< f
     \begin{lcbr}
         \begin{lcbr}
             |b1 a = avg (Leaf a)|\\
-            |q1 ((split avg length)|^2\ |((a1,a2),(b1,b2)))= avg (Fork ((a1,a2),(b1,b2)))|\\
+            |q1 ((split avg length)|^2\ |((a1,b1),(a2,b2)))= avg (Fork ((a1,b1),(a2,b2)))|\\
         \end{lcbr}\\
         \begin{lcbr}
             |b2 a = length (Leaf a)|\\
-            |q2 ((split avg length)|^2\ |((a1,a2),(b1,b2))) = length (Fork ((a1,a2),(b1,b2)))|\\
+            |q2 ((split avg length)|^2\ |((a1,b1),(a2,b2))) = length (Fork ((a1,b1),(a2,b2)))|\\
         \end{lcbr}
     \end{lcbr}
 %
@@ -2149,11 +2216,11 @@ recNList f = id -|- id >< f
     \begin{lcbr}
         \begin{lcbr}
             |b1 a = avg (Leaf a)|\\
-            |q1 ((avg (a1,a2),length (a1,a2)),(avg (b1,b2),length (b1,b2))) = avg (Fork ((a1,a2),(b1,b2)))|\\
+            |q1 ((avg (a1,b1),length (a1,b1)),(avg (a2,b2),length (a2,b2))) = avg (Fork ((a1,b1),(a2,b2)))|\\
         \end{lcbr}\\
         \begin{lcbr}
             |b2 a = length (Leaf a)|\\
-            |q2 ((avg (a1,a2),length (a1,a2)),(avg (b1,b2),length (b1,b2))) = length (Fork ((a1,a2),(b1,b2)))|\\
+            |q2 ((avg (a1,b1),length (a1,b1)),(avg (a2,b2),length (a2,b2))) = length (Fork ((a1,b1),(a2,b2)))|\\
         \end{lcbr}
     \end{lcbr}
 %
@@ -2162,11 +2229,11 @@ recNList f = id -|- id >< f
     \begin{lcbr}
         \begin{lcbr}
             |b1 a = a|\\
-            |q1 ((a1,a2), (b1,b2)) = (a1 * a2 + b1 * b2) / (a2 + b2)|\\
+            |q1 ((a1,b1), (a2,b2)) = (a1 * b1 + a2 * b2) / (b1 + b2)|\\
         \end{lcbr}\\
         \begin{lcbr}
             |b2 a = 1|\\
-            |q2 ((a1,a2), (b1,b2)) = a2 + b2|\\
+            |q2 ((a1,b1), (a2,b2)) = b1 + b2|\\
         \end{lcbr}
     \end{lcbr}
 \qed
@@ -2174,13 +2241,47 @@ recNList f = id -|- id >< f
 
 \newpage
 
+\noindent\textbf{Testes de correção}\\
+
+Por \ref{eq:2} podemos definir uma função que cálcula a média aritmética de uma lista como:
+
+\begin{code}
+avgListDef :: (Fractional a, Num a) => [a] -> a
+avgListDef = uncurry (/) . split sum (fromIntegral . length)
+\end{code}
+
+Uma função que cálcula a média aritmética de uma LTree pode ser definida como a função que cálcula a média de uma lista após converter a LTree para tal lista através da função |tips| definida em |Cp.hs|:
+
+\begin{code}
+avgLTreeDef :: (Fractional a, Num a) => LTree a -> a
+avgLTreeDef = avgListDef . tips
+\end{code}
+
+Funções de verificação das funções definidas como resposta ao Problema 4 através das definições feitas acimas:
+
+\begin{code}
+verifyAvgList = (<= 0.000001) . (uncurry (-)) . split avgListDef avg
+
+verifyAvgLTree = (<= 0.000001) . (uncurry (-)) . split avgLTreeDef avgLTree . genLTree where
+    genLTree = anaLTree lsplit
+\end{code}
+
+Verificação no ghci:
+
+\begin{verbatim}
+*Main> verifyAvgList [1.0, 1.3 .. 100]
+True
+*Main> verifyAvgLTree [1.0, 1.3 .. 100]
+True
+\end{verbatim}
+
+\newpage
+
 \subsection*{Problema 5}
 Inserir em baixo o código \Fsharp\ desenvolvido, entre \verb!\begin{verbatim}! e \verb!\end{verbatim}!:
 
 \begin{verbatim}
-// (c) MP-I (1998/9-2006/7) and CP (2005/6-2016/7)
-
-module BTree 
+module cp2021t 
 
 open Cp
 //import Data.List
@@ -2221,7 +2322,6 @@ let fmap f = cataBTree ( inBTree << baseBTree f id )
 // equivalent to:
 //       where fmap f = anaBTree ( baseBTree f id . outBTree )
 
-
 // (4) Examples ----------------------------------------------------------------
 
 // (4.1) Inversion (mirror) ----------------------------------------------------
@@ -2239,7 +2339,6 @@ let insord x =
         in either nil join x
 
 let inordt x = cataBTree insord  x                 // in-order traversal
-
 
 let preord x =
         let  f(x,(l,r)) = x :: l @ r
@@ -2267,7 +2366,6 @@ let qsep x =
     | (h::t) -> Right (h,(part (menor h) t))
 
 let qSort  x = hyloBTree insord qsep x // the same as (cataBTree inord) . (anaBTree qsep)
-
 
 
 (* pointwise versions:
@@ -2378,7 +2476,6 @@ let balBTree x = p1 (baldepth x)
 
 let depthBTree x = p2 (baldepth x)
 
-
 (*
 -- (6) Going polytipic -------------------------------------------------------
 
@@ -2419,91 +2516,11 @@ plug ((Dr True  a r):z) t = Node (a,(r,plug z t))
 
 \subsection*{Outras soluções}
 
-Outro diagrama do catamorfismo eval\_exp mais simples (talvez fosse melhor usar este) 
-
-\begin{eqnarray*}
-\xymatrix@@C=2cm{
-    |ExpAr A|
-            \ar[d]_-{|eval_exp a|}
-&
-    |OutExpAr A|
-            \ar[d]^{|fF (eval_exp a)|}
-            \ar[l]_-{|inT|}
-\\
-    |A|
-&
-    |fF A|
-            \ar[l]^-{|g_eval_exp|}
-}
-\end{eqnarray*}
-
-\begin{eqnarray*}
-\start
-\begin{lcbr}
-  |g1 () = v|\\
-  \begin{lcbr}
-    |g2 a = N a|\\
-    \begin{lcbr}
-      |g3 (Sum, (v1, v2)) = v1 + v2|\\
-      |g3 (Product, (v1, v2)) = v1 * v2|\\
-      |g4 (Negate, v1) = negate v1|\\
-      |g4 (E, v1) = expd v1|
-    \end{lcbr}
-  \end{lcbr}
-\end{lcbr}
-%
-\just\equiv{ uncurry +; add := uncurry + e outras }
-%
-\begin{lcbr}
-  |g1 () = v|\\
-  \begin{lcbr}
-    |g2 a = N a|\\
-    \begin{lcbr}
-      |g3 (Sum, (v1, v2)) = add (v1, v2)|\\
-      |g3 (Product, (v1, v2)) = mul (v1, v2)|\\
-      |g4 (Negate, v1) = negate v1|\\
-      |g4 (E, v1) = expd v1|
-    \end{lcbr}
-  \end{lcbr}
-\end{lcbr}
-%
-\just\equiv{ uncurry +; add := uncurry + e outras }
-%
-\begin{lcbr}
-  |g1 () = v|\\
-  \begin{lcbr}
-    |g2 a = N a|\\
-    \begin{lcbr}
-      |g3 (Sum, (v1, v2)) = add (p2 (Sum, (v1, v2)))|\\
-      |g3 (Product, (v1, v2)) = mul (p2 (Product, (v1, v2)))|\\
-      |g4 (Negate, v1) = negate (p2 (Negate, v1))|\\
-      |g4 (E, v1) = expd (p2 (E, v1))|
-    \end{lcbr}
-  \end{lcbr}
-\end{lcbr}
-%
-\just\equiv{ Def-comp; \ Igualdade extensional }
-%
-\begin{lcbr}
-  |g1 = const v|\\
-  \begin{lcbr}
-    |g2 = N|\\
-    \begin{lcbr}
-      |g3 = add . p2|\\
-      |g3 = mul . p2|\\
-      |g4 = negate . p2|\\
-      |g4 = expd . p2|
-    \end{lcbr}
-  \end{lcbr}
-\end{lcbr}
-\qed
-\end{eqnarray*}
-
 %format (cond a b c) = "{" a "} \rightarrow {" b "}, {" c "}"
 
 \begin{code}
--- Point free definition
-g_eval_exp v = either (const v) (either id (either bin un)) where
+-- Definição point free de g\_eval\_exp
+g_eval_exp_pf v = either (const v) (either id (either bin un)) where
     bin             = ap . (binop  >< id)
     un              = ap . (unop   >< id)
     binop  Sum      = addP
@@ -2511,7 +2528,7 @@ g_eval_exp v = either (const v) (either id (either bin un)) where
     unop   Negate   = negate
     unop   E        = expd
 --
--- Point wise with conditionals
+-- Definição point wise de g\_eval\_exp com condicionais
 g_eval_exp_cpw v = either g1 (either g2 (either g3 g4)) where
     g1 () = v
     g2 a  = a
@@ -2520,7 +2537,7 @@ g_eval_exp_cpw v = either g1 (either g2 (either g3 g4)) where
     g4 (unop, a)  | unop == Negate  = negate a 
                   | otherwise       = expd a
 --
--- Point free with conditionals
+-- Definição point free de g\_eval\_exp com condicionais
 g_eval_exp_cpf v = either g1 (either g2 (either g3 g4)) where
     g1 = const v
     g2 = id
@@ -2529,7 +2546,7 @@ g_eval_exp_cpf v = either g1 (either g2 (either g3 g4)) where
 \end{code}
 
 \begin{code}
--- Point free definition
+-- Definição point free de sd\_gen
 sd_gen_pf :: Floating a =>
     Either () (Either a (Either (BinOp, ((ExpAr a, ExpAr a), (ExpAr a, ExpAr a))) (UnOp, (ExpAr a, ExpAr a))))
     -> (ExpAr a, ExpAr a)
@@ -2540,22 +2557,10 @@ sd_gen_pf = either (const (X, N 1)) (either (split N (const (N 0))) (either bin 
   binop  Product  = split (uncurry (Bin Product) . (p1 >< p1)) (uncurry (Bin Sum) . split (uncurry (Bin Product) . (p1 >< p2)) (uncurry (Bin Product) . (p2 >< p1)))
   unop   Negate   = (Un Negate >< Un Negate)
   unop   E        = split (Un E . p1) (uncurry (Bin Product) . (Un E >< id))
----
--- Point free definition with absorption-+
-sd_gen_pf_ab :: Floating a =>
-    Either () (Either a (Either (BinOp, ((ExpAr a, ExpAr a), (ExpAr a, ExpAr a))) (UnOp, (ExpAr a, ExpAr a))))
-    -> (ExpAr a, ExpAr a)
-sd_gen_pf_ab = either (const (X, N 1)) (either (split N (const (N 0))) (either bin un)) where
-  bin  = ap . (binop  >< id)
-  un   = ap . (unop   >< id)
-  binop  Sum      = (uncurry (Bin Sum) >< uncurry (Bin Sum)) . split (p1 >< p1) (p2 >< p2)
-  binop  Product  = (uncurry (Bin Product) >< uncurry (Bin Sum) . (uncurry (Bin Product) >< uncurry (Bin Product))) . split (p1 >< p1) (split (p1 >< p2) (p2 >< p1))
-  unop   Negate   = (Un Negate >< Un Negate)
-  unop   E        = (Un E >< uncurry (Bin Product)) . split p1 (Un E >< id)
 \end{code}
 
 \begin{code}
--- Point free definition
+-- Definição point free de ad\_gen
 ad_gen_pf v = either (const (v, 1)) (either (split id (const 0)) (either bin un)) where
   bin  = ap . (binop  >< id)
   un   = ap . (unop   >< id)
@@ -2563,75 +2568,15 @@ ad_gen_pf v = either (const (v, 1)) (either (split id (const 0)) (either bin un)
   binop  Product  = split (mulP . (p1 >< p1)) (addP . split (mulP . (p1 >< p2)) (mulP . (p2 >< p1)))
   unop   Negate   = (negate >< negate)
   unop   E        = split (expd . p1) (mulP . (expd >< id))
----
--- Point free definition with absorption-+
-ad_gen_pf_ab v = either (const (v, 1)) (either (split id (const 0)) (either bin un)) where
-  bin  = ap . (binop  >< id)
-  un   = ap . (unop   >< id)
-  binop  Sum      = (addP >< addP) . split (p1 >< p1) (p2 >< p2)
-  binop  Product  = (mulP >< addP . (mulP >< mulP)) . split (p1 >< p1) (split (p1 >< p2) (p2 >< p1))
-  unop   Negate   = (negate >< negate)
-  unop   E        = (expd >< mulP) . split p1 (expd >< id)
 \end{code}
 
-\noindent Definição point-free de avg\_aux
-
-\begin{eqnarray*}
-\start
-    \begin{lcbr}
-        \begin{lcbr}
-            |b1 a = a|\\
-            |q1 (a, (avg as, length as)) = (a + avg as * length as) / (legth as + 1)|\\
-        \end{lcbr}\\
-        \begin{lcbr}
-            |b2 a = length a|\\
-            |q2 (a, (avg as, length as)) = length as + 1|\\
-        \end{lcbr}
-    \end{lcbr}
-%
-\just\equiv{ Def-comp; \ Igualdade extensional }
-%
-    \begin{lcbr}
-        \begin{lcbr}
-            |b1 = id|\\
-            |q1 = uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2)|\\
-        \end{lcbr}\\
-        \begin{lcbr}
-            |b2 = one|\\
-            |q2 = succ . p2 . p2|\\
-        \end{lcbr}
-    \end{lcbr}
-%
-\just\equiv{ Eq-+; \ Eq-|><| }
-%
-    |split (either b1 q1) (either b2 q2) = split (either id (uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2))) (either one (succ . p2 . p2))|
-%
-\just\equiv{ Lei da troca }
-%
-    |either (split b1 b2) (split q1 q2) = either (split id one) (split (uncurry (/) . split (add . (id >< mul)) (succ . p2 . p2)) (succ . p2 . p2))|
-\qed
-\end{eqnarray*}
-
 \begin{code}
+-- Definição point free de avg\_aux
 avg_aux_pf = cataNList (either (split id oneP) (split (uncurry (/) . split (addP . (id >< mulP)) (succ . p2 . p2)) (succ . p2 . p2)))
-
+--
+-- Definição point free de avgLTree
 avgLTree_pf = p1 . cataLTree gene where
     gene = either (split id oneP) (split (uncurry (/) . split (addP . (mulP >< mulP)) (addP . (p2 >< p2))) (addP . (p2 >< p2)))
-\end{code}
-
-\begin{code}
-avg_aux'' = cataNList (either (split b1 q1) (split b2 q2)) where
-    b1 a = a
-    q1 a = 1
-    b2 (a,(b,c)) = (a + b * c) / (c + 1)
-    q2 (a,(b,c)) = c + 1
-
-avgLTree' = p1.cataLTree gene where
-    gene = either (split b1 b2) (split q1 q2)
-    b1 a = a
-    b2 a = 1
-    q1 ((a1,b1),(a2,b2)) = (a1 * b1 + a2 * b2) / (b1 + b2)
-    q2 ((a1,b1),(a2,b2)) = b1 + b2
 \end{code}
 
 %----------------- Fim do anexo com soluções dos alunos ------------------------%
