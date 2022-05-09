@@ -1,6 +1,6 @@
 # Program Design by Calculation
 
-Project developed for the Program Calculus course.  
+Project developed for the Calculation of Programs course.  
 All programs are calculated, and thus their correctness is proven.  
 Written in literal Haskell through the use of [`lhs2TeX`](https://github.com/kosmikus/lhs2tex).
 
