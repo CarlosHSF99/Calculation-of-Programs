@@ -1065,19 +1065,19 @@ outExpAr (Un op a)     = i2 $ i2 $ i2 (op, a)
 ---
 recExpAr f = baseExpAr id id id f f id f
 ---
-g_eval_exp v = either con (either var (either bin un)) where
-    con  ()                 = v
-    var  a                  = a
+g_eval_exp v = either var (either num (either bin un)) where
+    var  ()                 = v
+    num  a                  = a
     bin  (Sum,     (a, b))  = a + b
     bin  (Product, (a, b))  = a * b
     un   (Negate, a)        = negate a
     un   (E,      a)        = expd a
+---
+eval_exp_int v = cataExpAr $ g_eval_exp_int v
 
-eval_exp' v = cataExpAr $ g_eval_exp' v
-
-g_eval_exp' v = either con (either var (either bin un)) where
-    con  ()                 = v
-    var  a                  = a
+g_eval_exp_int v = either var (either num (either bin un)) where
+    var  ()                 = v
+    num  a                  = a
     bin  (Sum,     (a, b))  = a + b
     bin  (Product, (0, b))  = 0
     bin  (Product, (a, 0))  = 0
@@ -1098,9 +1098,9 @@ gopt a = g_eval_exp a
 sd_gen :: Floating a =>
     Either () (Either a (Either (BinOp, ((ExpAr a, ExpAr a), (ExpAr a, ExpAr a))) (UnOp, (ExpAr a, ExpAr a))))
     -> (ExpAr a, ExpAr a)
-sd_gen = either con (either var (either bin un)) where
-  con _  = (X, N 1)
-  var a  = (N a, N 0)
+sd_gen = either var (either num (either bin un)) where
+  var _  = (X, N 1)
+  num a  = (N a, N 0)
   bin  (Sum      , ((x, x'), (y, y')))  = (Bin  Sum      x y  , Bin  Sum x' y')
   bin  (Product  , ((x, x'), (y, y')))  = (Bin  Product  x y  , Bin  Sum (Bin Product x y') (Bin Product x' y))
   un   (Negate   ,  (x, x'))            = (Un   Negate   x    , Un   Negate x')
@@ -1108,9 +1108,9 @@ sd_gen = either con (either var (either bin un)) where
 \end{code}
 
 \begin{code}
-ad_gen v = either con (either var (either bin un)) where
-  con _ = (v, 1)
-  var a = (a, 0)
+ad_gen v = either var (either num (either bin un)) where
+  var _ = (v, 1)
+  num a = (a, 0)
   bin  (Sum      , ((x, x'), (y, y')))  = (x + y     , x' + y')
   bin  (Product  , ((x, x'), (y, y')))  = (x * y     , x * y' + x' * y)
   un   (Negate   ,  (x, x'))            = (negate x  , negate x')
@@ -1313,12 +1313,12 @@ ad_gen v = either con (either var (either bin un)) where
   \end{lcbr}
 \end{lcbr}
 %
-\just\equiv{ Def-ev; \ |con| := |g1|; \ |var| := |g2|; \ |bin| := |g3|; \ |un| := |g4| }
+\just\equiv{ Def-ev; \ |var| := |g1|; \ |num| := |g2|; \ |bin| := |g3|; \ |un| := |g4| }
 %
 \begin{lcbr}
-  |con () = v|\\
+  |var () = v|\\
   \begin{lcbr}
-    |var a = a|\\
+    |num a = a|\\
     \begin{lcbr}
       \begin{lcbr}
         |bin (Sum, (v1, v2)) = v1 + v2|\\
@@ -1494,12 +1494,12 @@ Diagramas dos catamorfismos presentes em |sd| e |ad| respetivamente:
   \end{lcbr}
 \end{lcbr}
 %
-\just\equiv{ Def-sd; \ |con| := |g1|; \ |var| := |g2|; \ |bin| := |g3|; \ |un| := |g4| }
+\just\equiv{ Def-sd; \ |var| := |g1|; \ |num| := |g2|; \ |bin| := |g3|; \ |un| := |g4| }
 %
 \begin{lcbr}
-  |con () = (X, N 1)|\\
+  |var () = (X, N 1)|\\
   \begin{lcbr}
-    |var a = (N a, N 0)|\\
+    |num a = (N a, N 0)|\\
     \begin{lcbr}
       \begin{lcbr}
         |bin (Sum, ((a, a'), (b, b'))) = (Bin Sum a b, Bin Sum a' b')|\\
@@ -1606,12 +1606,12 @@ Diagramas dos catamorfismos presentes em |sd| e |ad| respetivamente:
   \end{lcbr}
 \end{lcbr}
 %
-\just\equiv{ Def-ad; \ |con| := |g1|; \ |var| := |g2|; \ |bin| := |g3|; \ |un| := |g4| }
+\just\equiv{ Def-ad; \ |var| := |g1|; \ |num| := |g2|; \ |bin| := |g3|; \ |un| := |g4| }
 %
 \begin{lcbr}
-  |con v = (v, 1)|\\
+  |var v = (v, 1)|\\
   \begin{lcbr}
-    |var a = (a, 0)|\\
+    |num a = (a, 0)|\\
     \begin{lcbr}
       \begin{lcbr}
         |bin (Sum, ((a, a'), (b, b'))) = (a + b, a' + b')|\\
@@ -1626,6 +1626,29 @@ Diagramas dos catamorfismos presentes em |sd| e |ad| respetivamente:
 \end{lcbr}
 \qed
 \end{eqnarray*}
+
+\newpage
+
+\noindent Testes de correção e performance:\\
+
+Testes de performance de |optimize|\_|eval|:
+
+\begin{code}
+sums = cataNat (either (const (N 1)) (Bin Sum (N 3)))
+p = Bin Product (sums 1000) (N 0)
+\end{code}
+
+\begin{verbatim}
+*Main> eval_exp 1 p
+0.0
+(0.04 secs, 4,098,576 bytes)
+*Main> eval_exp_int 1 p
+0.0
+(0.05 secs, 4,098,768 bytes)
+*Main> optmize_eval 1 p
+0.0
+(0.02 secs, 368,704 bytes)
+\end{verbatim}
 
 \newpage
 
@@ -1706,7 +1729,7 @@ Das definições das funções |c|, |t| e |b| é usada a \emph{regra de algibeir
                & = & 1 + b\ n\\
 \end{eqnarray*}
 
-\noindent Testes de correção e performance
+\noindent Testes de correção e performance:
 
 \begin{code}
 oracleCmp = (map cat [0..25]) == oracle
@@ -1714,15 +1737,15 @@ catdefCmp = (map cat [0..99]) == (map catdef [0..99])
 \end{code}
 
 \begin{verbatim}
-*Main BTree Cp LTree List Nat Paths_cp2021tStack> oracleCmp
+*Main> oracleCmp
 True
-*Main BTree Cp LTree List Nat Paths_cp2021tStack> catdefCmp
+*Main> catdefCmp
 True
-*Main BTree Cp LTree List Nat Paths_cp2021tStack> catdef 100000
+*Main> catdef 100000
 1780545081823061907837573390658902019302...7404946049551384445058055232123705950784
 (68.63 secs, 71,864,876,408 bytes)
+*Main> cat 100000
 1780545081823061907837573390658902019302...7404946049551384445058055232123705950784
-*Main BTree Cp LTree List Nat Paths_cp2021tStack> cat 100000
 (4.48 secs, 3,077,657,400 bytes)
 \end{verbatim}
 
@@ -1883,7 +1906,7 @@ Onde a função |f| em |conquer| é definida por:
 
 \newpage
 
-\noindent\textbf{Testes de correção}
+\noindent\textbf{Testes de correção}\\
 
 Definições das funções do Problema 3 dadas como especificações:
 
@@ -2053,7 +2076,11 @@ recNList f = id -|- id >< f
 %
 	|split avg length = cataNList (either b q)|
 %
-\just\equiv{ Inferência dos tipos de b e q; \ Lei da troca }
+\just\equiv{ Inferência dos tipos de b e q }
+%
+	|split avg length = cataNList (either (split b1 b2) (split q1 q2))|
+%
+\just\equiv{ Lei da troca }
 %
 	|split avg length = cataNList (split (either b1 q1) (either b2 q2))|
 %
@@ -2064,7 +2091,7 @@ recNList f = id -|- id >< f
         |length . inNList = either b2 q2 . fF (split avg length)|\\
     \end{lcbr}
 %
-\just\equiv{ Def-inNList; \ Def-F }
+\just\equiv{ Def-inNList; \ Def-|fF| }
 %
     \begin{lcbr}
         |avg . either singl cons = either b1 q1 . (id + id >< (split avg length))|\\
@@ -2160,7 +2187,11 @@ recNList f = id -|- id >< f
 %
 	|split avg length = cataLTree (either b q)|
 %
-\just\equiv{ Inferência dos tipos de b e q; \ Lei da troca }
+\just\equiv{ Inferência dos tipos de b e q }
+%
+	|split avg length = cataLTree (either (split b1 b2) (split q1 q2))|
+%
+\just\equiv{ Lei da troca }
 %
 	|split avg length = cataLTree (split (either b1 q1) (either b2 q2))|
 %
